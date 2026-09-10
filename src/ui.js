@@ -27,6 +27,12 @@ let game = new Game({ seed: requestedSeed() });
 let landingFrom = 0;
 let hintsOn = false;
 let bestRunShown = false;
+let definitionFor = null;
+
+// Free, no key, no sign-up. Blocked outright in some embeddings, which is what
+// the Wiktionary fallback is for.
+const DEFINITION_API = "https://api.dictionaryapi.dev/api/v2/entries/en/";
+const definitions = new Map();
 let note = "";
 let noteIsError = false;
 
@@ -192,6 +198,64 @@ function renderResult() {
   return box;
 }
 
+/** Pull the first sense of a word, or null if we cannot reach a dictionary. */
+async function lookUp(word) {
+  let entry = null;
+  try {
+    const response = await fetch(DEFINITION_API + encodeURIComponent(word));
+    if (response.ok) {
+      const meaning = (await response.json())?.[0]?.meanings?.[0];
+      const text = meaning?.definitions?.[0]?.definition;
+      if (text) entry = { part: meaning.partOfSpeech ?? "", text };
+    }
+  } catch { /* offline, or the page is not allowed to reach it */ }
+  definitions.set(word, entry);
+  return entry;
+}
+
+function showDefinition(word) {
+  definitionFor = word;
+  render();
+  if (definitions.has(word)) return;
+  lookUp(word).then(() => {
+    if (definitionFor === word) render();
+  });
+}
+
+/** Definition text comes from elsewhere, so it goes in as text, never markup. */
+function renderDefinition() {
+  const box = document.createElement("p");
+  box.className = "definition";
+
+  const name = document.createElement("b");
+  name.textContent = definitionFor.toUpperCase();
+  box.append(name, " ");
+
+  if (!definitions.has(definitionFor)) {
+    box.append("\u2026");
+    return box;
+  }
+
+  const entry = definitions.get(definitionFor);
+  if (entry) {
+    if (entry.part) {
+      const part = document.createElement("i");
+      part.textContent = entry.part;
+      box.append(part, " \u00b7 ");
+    }
+    box.append(entry.text);
+    return box;
+  }
+
+  const link = document.createElement("a");
+  link.href = `https://en.wiktionary.org/wiki/${encodeURIComponent(definitionFor)}`;
+  link.target = "_blank";
+  link.rel = "noopener";
+  link.textContent = "look it up on Wiktionary";
+  box.append("could not be fetched here, so ", link, ".");
+  return box;
+}
+
 /** One of the highest-scoring runs this deal allowed, revealed after the fact. */
 function renderBestRun() {
   const wrap = document.createElement("div");
@@ -202,29 +266,40 @@ function renderBestRun() {
   wrap.append(title);
 
   const rows = [
-    [game.seed, "dealt"],
-    ...game.bestRun.line.map((entry) => [entry.word, `+${entry.points}`]),
-    ["finished", `+${FINISH_BONUS}`],
+    [game.seed, "dealt", true],
+    ...game.bestRun.line.map((entry) => [entry.word, `+${entry.points}`, true]),
+    ["finished", `+${FINISH_BONUS}`, false],
   ];
 
   const list = document.createElement("ol");
   list.className = "breakdown";
-  list.append(...rows.map(([label, value]) => {
+  list.append(...rows.map(([label, value, isWord]) => {
     const item = document.createElement("li");
-    const name = document.createElement("span");
+
+    const name = document.createElement(isWord ? "button" : "span");
     name.className = "bd-word";
     name.textContent = label;
+    if (isWord) {
+      name.type = "button";
+      name.classList.add("lookup");
+      name.title = `What does ${label.toUpperCase()} mean?`;
+      name.addEventListener("click", () => showDefinition(label));
+    }
+
     const count = document.createElement("span");
     count.className = "bd-count";
     count.textContent = value;
+
     item.append(name, count);
     return item;
   }));
   wrap.append(list);
 
+  if (definitionFor) wrap.append(renderDefinition());
+
   const note = document.createElement("p");
   note.className = "best-run-note";
-  note.textContent = "Often several runs tie for the best. This is one of them.";
+  note.textContent = "Tap a word for its meaning. Runs often tie for best, and this is one of them.";
   wrap.append(note);
   return wrap;
 }
@@ -477,6 +552,7 @@ function startNewGame() {
   game = new Game();
   game.hintsUsed = hintsOn;
   bestRunShown = false;
+  definitionFor = null;
   landingFrom = 0;
   setNote("");
   render();

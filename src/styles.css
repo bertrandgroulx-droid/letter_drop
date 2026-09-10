@@ -336,6 +336,33 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 
 .best-run .breakdown { padding-top: 0.4rem; }
 .best-run-note { margin: 0.5rem 0 0; font-size: 0.75rem; color: var(--ink-dim); }
+
+/* Strips the button chrome only. Type comes from .bd-word, which these also
+   carry, so they match the rows that are not clickable. */
+button.lookup {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+button.lookup:hover { color: var(--new); }
+
+.definition {
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius);
+  background: var(--bg);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.definition a { color: var(--new); }
 .result dl { display: grid; grid-template-columns: auto auto; gap: 0.2rem 1.25rem; margin: 0 0 0.75rem; }
 .result dt { color: var(--ink-dim); text-align: left; }
 .result dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
