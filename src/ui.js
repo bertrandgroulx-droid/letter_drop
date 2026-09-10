@@ -66,6 +66,7 @@ function renderRow(row, rowIndex) {
     const tile = document.createElement(interactive ? "button" : "div");
     tile.className = tileClasses(row, index, isCurrent);
     tile.textContent = letter;
+    if (index === addedIndex(row)) tile.dataset.value = letterValue(letter);
     if (interactive) {
       tile.type = "button";
       tile.addEventListener("click", () => {
@@ -86,7 +87,10 @@ function renderSlot(side) {
   slot.type = "button";
   slot.className = `tile slot${active ? " active" : ""}${active && game.letter ? " filled" : ""}`;
   slot.setAttribute("aria-label", side === "front" ? "add letter in front" : "add letter behind");
-  if (active && game.letter) slot.textContent = game.letter;
+  if (active && game.letter) {
+    slot.textContent = game.letter;
+    slot.dataset.value = letterValue(game.letter);
+  }
   slot.addEventListener("click", () => {
     game.setSide(side);
     setNote("");

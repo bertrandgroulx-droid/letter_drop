@@ -201,6 +201,7 @@ main {
 .row.past { opacity: 0.5; }
 
 .tile {
+  position: relative;
   width: var(--tile);
   height: var(--tile);
   display: grid;
@@ -216,6 +217,18 @@ main {
 }
 
 .row.landing .tile { animation: land 0.2s ease-out; }
+
+/* Only the letter you added carries a value, because it is the only one on the
+   row that was ever worth points. */
+.tile[data-value]::after {
+  content: attr(data-value);
+  position: absolute;
+  right: 0.24rem;
+  bottom: 0.08rem;
+  font-size: calc(var(--tile) * 0.2);
+  font-weight: 700;
+  opacity: 0.7;
+}
 
 @keyframes land {
   from { transform: translateY(-0.5rem); opacity: 0; }

@@ -220,6 +220,7 @@ main {
 .row.past { opacity: 0.5; }
 
 .tile {
+  position: relative;
   width: var(--tile);
   height: var(--tile);
   display: grid;
@@ -235,6 +236,18 @@ main {
 }
 
 .row.landing .tile { animation: land 0.2s ease-out; }
+
+/* Only the letter you added carries a value, because it is the only one on the
+   row that was ever worth points. */
+.tile[data-value]::after {
+  content: attr(data-value);
+  position: absolute;
+  right: 0.24rem;
+  bottom: 0.08rem;
+  font-size: calc(var(--tile) * 0.2);
+  font-weight: 700;
+  opacity: 0.7;
+}
 
 @keyframes land {
   from { transform: translateY(-0.5rem); opacity: 0; }
@@ -465,7 +478,8 @@ dialog form { text-align: right; }
     <li><b>2 points</b> for every word you make.</li>
     <li><b>1, 2 or 3 points</b> for the letter it brings in, depending on how
         awkward that letter is to use. The small number in the corner of each
-        key says which, the way a Scrabble tile does. The last letter falls
+        key says which, the way a Scrabble tile does, and the letter carries
+        it onto the board once you play it. The last letter falls
         without adding one, so that round is worth 2.</li>
     <li><b>3 points</b> for getting all the way down to a single letter. Stop
         short and you lose them, so the expensive letter is not always worth
@@ -915,6 +929,7 @@ function renderRow(row, rowIndex) {
     const tile = document.createElement(interactive ? "button" : "div");
     tile.className = tileClasses(row, index, isCurrent);
     tile.textContent = letter;
+    if (index === addedIndex(row)) tile.dataset.value = letterValue(letter);
     if (interactive) {
       tile.type = "button";
       tile.addEventListener("click", () => {
@@ -935,7 +950,10 @@ function renderSlot(side) {
   slot.type = "button";
   slot.className = `tile slot${active ? " active" : ""}${active && game.letter ? " filled" : ""}`;
   slot.setAttribute("aria-label", side === "front" ? "add letter in front" : "add letter behind");
-  if (active && game.letter) slot.textContent = game.letter;
+  if (active && game.letter) {
+    slot.textContent = game.letter;
+    slot.dataset.value = letterValue(game.letter);
+  }
   slot.addEventListener("click", () => {
     game.setSide(side);
     setNote("");
