@@ -192,9 +192,9 @@ function renderConfirm() {
 function renderResult() {
   const { words, letters, total } = game.score;
   const box = document.createElement("div");
-  box.className = "result";
-  const heading = {
-    won: "Cleared it.",
+  box.className = game.isPerfect ? "result perfect" : "result";
+  const heading = game.isPerfect ? "Perfect." : {
+    won: "All the way down.",
     gaveup: "Gave up.",
     struckout: "Three strikes.",
     done: "End of the line.",
@@ -212,7 +212,8 @@ function renderResult() {
       ${bonus ? `<dt>Got all the way down</dt><dd>${bonus}</dd>` : ""}
       ${undoRow}
       <dt class="total">Total</dt><dd class="total">${total} of ${game.bestPossible}</dd>
-    </dl>`;
+    </dl>
+    ${game.isPerfect ? `<p class="perfect-note">Nobody could have scored more on ${game.seed.toUpperCase()}.</p>` : ""}`;
   const again = document.createElement("button");
   again.textContent = "New game";
   again.addEventListener("click", startNewGame);
@@ -243,7 +244,7 @@ function renderResult() {
   } else {
     const reveal = document.createElement("button");
     reveal.className = "ghost reveal";
-    reveal.textContent = "Show a perfect run";
+    reveal.textContent = game.isPerfect ? "Show another perfect run" : "Show a perfect run";
     reveal.addEventListener("click", () => {
       game.answerShown = true;
       prefetchDefinitions();
@@ -433,7 +434,9 @@ function renderBestRun() {
   wrap.className = "best-run";
 
   const title = document.createElement("h3");
-  title.textContent = `A perfect run, worth ${game.bestPossible}`;
+  title.textContent = game.isPerfect
+    ? `Another run worth ${game.bestPossible}`
+    : `A perfect run, worth ${game.bestPossible}`;
   wrap.append(title);
 
   const rows = [
@@ -497,7 +500,7 @@ function shareText() {
   const link = `${location.origin}${location.pathname}?word=${game.seed}`;
   return [
     `Letter Drop \u00b7 ${game.seed.toUpperCase()}`,
-    `${game.score.total} of ${game.bestPossible}`,
+    `${game.score.total} of ${game.bestPossible}${game.isPerfect ? " \u00b7 perfect" : ""}`,
     "",
     ...rows,
     "",

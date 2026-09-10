@@ -423,3 +423,36 @@ test("easy deals are the ones where the obvious play is the best play", () => {
     assert.ok(greedy(seed) < new Game({ seed }).bestPossible, `${seed} should not be easy`);
   }
 });
+
+test("a run that matches the deal's ceiling is perfect", () => {
+  const game = new Game({ seed: "plant" });
+  assert.equal(game.isPerfect, false, "not before it is even played");
+
+  play(game, [1, 2, 3], "f", "front");   // FLAN
+  play(game, [2, 3], "y");               // ANY
+  play(game, [0], "h");                  // AH, then the A drops
+
+  assert.equal(game.phase, "won");
+  assert.equal(game.score.total, game.bestPossible);
+  assert.equal(game.isPerfect, true);
+});
+
+test("a finished run that leaves points behind is not perfect", () => {
+  const game = new Game({ seed: "plant" });
+  perfectRun(game);   // LAND, LAB, AH: a clean finish, but not the best line
+  assert.equal(game.phase, "won");
+  assert.ok(game.score.total < game.bestPossible);
+  assert.equal(game.isPerfect, false);
+});
+
+test("an undo can cost you a perfect run even on the best line", () => {
+  const game = new Game({ seed: "plant" });
+  play(game, [1, 2, 3], "f", "front");
+  game.undo();
+  play(game, [1, 2, 3], "f", "front");
+  play(game, [2, 3], "y");
+  play(game, [0], "h");
+  assert.equal(game.phase, "won");
+  assert.equal(game.score.penalty, 1);
+  assert.equal(game.isPerfect, false, "the point lost to undo is a point short");
+});

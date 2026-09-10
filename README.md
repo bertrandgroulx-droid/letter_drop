@@ -69,7 +69,9 @@ need one kept unspent for the final round.
 
 Every deal has its own ceiling, worked out by searching all of its solutions,
 and it sits beside your running score from the first move, along with how many
-runs reach it. When a game ends you
+runs reach it. Matching it is called out as a perfect run, which takes the best
+line and no undos, since an undo costs a point and puts the ceiling out of
+reach. When a game ends you
 can reveal one of the runs that reached it, along with how many runs tie for
 it. Ties are the rule rather than the exception: a median deal has around 60
 perfect runs and none has fewer than three, which is why the one shown is

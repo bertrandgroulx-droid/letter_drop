@@ -406,6 +406,15 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
   padding: 0.9rem 1.25rem;
 }
 
+.result.perfect { border-color: var(--new); box-shadow: 0 0 0 3px color-mix(in srgb, var(--new) 22%, transparent); }
+.result.perfect h2 { color: var(--new); }
+
+.perfect-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--new);
+}
+
 .result h2 { margin: 0 0 0.5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
 .strikes { display: inline-flex; gap: 0.28rem; align-items: center; }
 
@@ -707,7 +716,8 @@ dialog form { text-align: right; }
   <p class="max">Every deal has its own best possible score, shown beside your
      running total from the start, along with how many different runs reach
      it. There are usually dozens, so the one the game shows you afterwards is
-     rarely the one you found. Reaching it is a balance: the awkward letters
+     rarely the one you found. Match that score and the game says so: a
+     <b>perfect</b> run means nobody could have done better on your deal. Reaching it is a balance: the awkward letters
      pay more, but taking one without a route to the bottom costs you the
      finish, and a bad split can leave you with nothing to make at all. When a
      game ends you can reveal a run that scored the lot, to see what you
@@ -997,6 +1007,11 @@ class Game {
 
   get bestPossible() {
     return this.bestRun.score;
+  }
+
+  /** Finished, and matched the best this deal ever allowed. */
+  get isPerfect() {
+    return this.phase === "won" && this.score.total === this.bestPossible;
   }
 
   get score() {
@@ -1367,9 +1382,9 @@ function renderConfirm() {
 function renderResult() {
   const { words, letters, total } = game.score;
   const box = document.createElement("div");
-  box.className = "result";
-  const heading = {
-    won: "Cleared it.",
+  box.className = game.isPerfect ? "result perfect" : "result";
+  const heading = game.isPerfect ? "Perfect." : {
+    won: "All the way down.",
     gaveup: "Gave up.",
     struckout: "Three strikes.",
     done: "End of the line.",
@@ -1387,7 +1402,8 @@ function renderResult() {
       ${bonus ? `<dt>Got all the way down</dt><dd>${bonus}</dd>` : ""}
       ${undoRow}
       <dt class="total">Total</dt><dd class="total">${total} of ${game.bestPossible}</dd>
-    </dl>`;
+    </dl>
+    ${game.isPerfect ? `<p class="perfect-note">Nobody could have scored more on ${game.seed.toUpperCase()}.</p>` : ""}`;
   const again = document.createElement("button");
   again.textContent = "New game";
   again.addEventListener("click", startNewGame);
@@ -1418,7 +1434,7 @@ function renderResult() {
   } else {
     const reveal = document.createElement("button");
     reveal.className = "ghost reveal";
-    reveal.textContent = "Show a perfect run";
+    reveal.textContent = game.isPerfect ? "Show another perfect run" : "Show a perfect run";
     reveal.addEventListener("click", () => {
       game.answerShown = true;
       prefetchDefinitions();
@@ -1608,7 +1624,9 @@ function renderBestRun() {
   wrap.className = "best-run";
 
   const title = document.createElement("h3");
-  title.textContent = `A perfect run, worth ${game.bestPossible}`;
+  title.textContent = game.isPerfect
+    ? `Another run worth ${game.bestPossible}`
+    : `A perfect run, worth ${game.bestPossible}`;
   wrap.append(title);
 
   const rows = [
@@ -1672,7 +1690,7 @@ function shareText() {
   const link = `${location.origin}${location.pathname}?word=${game.seed}`;
   return [
     `Letter Drop \u00b7 ${game.seed.toUpperCase()}`,
-    `${game.score.total} of ${game.bestPossible}`,
+    `${game.score.total} of ${game.bestPossible}${game.isPerfect ? " \u00b7 perfect" : ""}`,
     "",
     ...rows,
     "",

@@ -227,6 +227,11 @@ export class Game {
     return this.bestRun.score;
   }
 
+  /** Finished, and matched the best this deal ever allowed. */
+  get isPerfect() {
+    return this.phase === "won" && this.score.total === this.bestPossible;
+  }
+
   get score() {
     const words = this.wordsMade * POINTS_PER_WORD;
     const letters = this.newLetters.reduce((sum, c) => sum + letterValue(c), 0);
