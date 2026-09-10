@@ -1,0 +1,230 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f6f6f4;
+  --surface: #ffffff;
+  --line: #d8d6d0;
+  --ink: #1b1c1e;
+  --ink-dim: #6b6d72;
+  --keep: #e8940c;
+  --keep-ink: #7a4b00;
+  --new: #1e9e5a;
+  --new-ink: #0c4f2b;
+  --bad: #d2382c;
+  --tile: clamp(2.9rem, 12vw, 4rem);
+  --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131519;
+    --surface: #1d2026;
+    --line: #333944;
+    --ink: #eceef2;
+    --ink-dim: #9aa0ab;
+    --keep: #f0a83a;
+    --keep-ink: #2a1a00;
+    --new: #47c98a;
+    --new-ink: #06301b;
+    --bad: #f0776b;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0 max(1rem, env(safe-area-inset-left)) 1rem;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ---------- top bar ---------- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 0 0.6rem;
+  border-bottom: 1px solid var(--line);
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.bar-right { display: flex; align-items: center; gap: 0.5rem; }
+
+.score {
+  min-width: 2.6rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--new);
+  color: #fff;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0.35rem 0.75rem;
+}
+
+button:hover:not(:disabled) { border-color: var(--ink-dim); }
+button:disabled { opacity: 0.4; cursor: default; }
+button.primary { background: var(--new); border-color: var(--new); color: #fff; font-weight: 600; }
+.ghost { font-size: 0.85rem; }
+
+/* ---------- board ---------- */
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 0;
+}
+
+.board { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+
+.row { display: flex; gap: 0.4rem; align-items: center; }
+.row.past { opacity: 0.5; }
+
+.tile {
+  width: var(--tile);
+  height: var(--tile);
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: calc(var(--tile) * 0.46);
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0;
+}
+
+.row.landing .tile { animation: land 0.2s ease-out; }
+
+@keyframes land {
+  from { transform: translateY(-0.5rem); opacity: 0; }
+}
+
+button.tile:hover:not(:disabled) { border-color: var(--keep); }
+.tile.selected, .tile.kept { background: var(--keep); border-color: var(--keep); color: var(--keep-ink); }
+.tile.added { border-color: var(--new); color: var(--new); }
+.tile.droppable { border-color: var(--new); border-style: dashed; color: var(--new); }
+
+.slot {
+  border-style: dashed;
+  color: var(--ink-dim);
+  font-size: calc(var(--tile) * 0.34);
+}
+
+.slot.active { border-color: var(--new); border-style: solid; color: var(--new); }
+.slot.active:empty::after { content: "?"; opacity: 0.55; }
+.slot.filled { border-style: solid; border-color: var(--new); color: var(--new); }
+.slot.dead { opacity: 0.35; }
+
+.row.shake { animation: shake 0.3s; }
+
+@keyframes shake {
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.message { margin: 0; min-height: 1.5rem; text-align: center; color: var(--ink-dim); }
+.message.error { color: var(--bad); }
+.message b { color: var(--ink); }
+
+.controls { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+.toggle { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--ink-dim); }
+
+/* ---------- result ---------- */
+
+.result {
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0.9rem 1.25rem;
+}
+
+.result h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+.result dl { display: grid; grid-template-columns: auto auto; gap: 0.2rem 1.25rem; margin: 0 0 0.75rem; }
+.result dt { color: var(--ink-dim); text-align: left; }
+.result dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.result .total { border-top: 1px solid var(--line); padding-top: 0.3rem; }
+
+/* ---------- keyboard ---------- */
+
+.keyboard { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
+.kb-row { display: flex; gap: 0.3rem; }
+
+.key {
+  min-width: clamp(1.7rem, 8.2vw, 2.5rem);
+  height: clamp(2.6rem, 11vw, 3.2rem);
+  padding: 0 0.25rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: clamp(0.75rem, 3.4vw, 0.95rem);
+}
+
+.key.wide { min-width: clamp(3.2rem, 14vw, 4.5rem); }
+.key.seed { border-color: var(--ink-dim); border-width: 2px; }
+.key.used { background: var(--line); color: var(--ink-dim); }
+.key.scored { background: var(--new); border-color: var(--new); color: #fff; }
+.key.dead { opacity: 0.3; }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  justify-content: center;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+}
+
+.legend span { display: flex; align-items: center; gap: 0.35rem; }
+
+.swatch { width: 0.85rem; height: 0.85rem; border-radius: 3px; border: 2px solid var(--line); }
+.swatch.seed { border-color: var(--ink-dim); }
+.swatch.scored { background: var(--new); border-color: var(--new); }
+.swatch.used { background: var(--line); }
+
+/* ---------- rules ---------- */
+
+dialog {
+  max-width: 34rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 1.25rem;
+}
+
+dialog::backdrop { background: rgb(0 0 0 / 0.55); }
+dialog h2 { margin-top: 0; }
+dialog h3 { margin-bottom: 0.3rem; }
+.rounds { padding-left: 1.2rem; }
+.rounds li { margin-bottom: 0.35rem; }
+.max { color: var(--ink-dim); font-size: 0.88rem; }
+dialog form { text-align: right; }
