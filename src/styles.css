@@ -62,6 +62,21 @@
 
 * { box-sizing: border-box; }
 
+/* iOS reads two quick taps as a zoom gesture, which is exactly what dropping
+   letters looks like. This turns off double-tap zoom while leaving pinch zoom
+   and scrolling alone. */
+body { touch-action: manipulation; }
+
+/* Anything tappable: no zoom, no grey flash, no text selected or callout
+   raised by a fast second tap on the same letter. */
+button, .tile, .key {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 body {
   margin: 0;
   min-height: 100dvh;
