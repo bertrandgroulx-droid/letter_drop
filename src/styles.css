@@ -401,7 +401,7 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 
 @keyframes blink-twice {
   0%, 14%, 28%, 100% { background: var(--surface); border-color: var(--line); color: var(--ink); }
-  7%, 21% { background: var(--new); border-color: var(--new); color: #fff; }
+  7%, 21% { background: var(--keep); border-color: var(--keep); color: var(--keep-ink); }
 }
 
 .best-run {
