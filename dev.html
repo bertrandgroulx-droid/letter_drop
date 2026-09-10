@@ -22,7 +22,8 @@
 <header class="bar">
   <h1>Letter&nbsp;Drop</h1>
   <div class="bar-right">
-    <button type="button" id="hints" class="ghost" aria-pressed="false">Hints</button>
+    <button type="button" id="hints" class="ghost" aria-pressed="false"
+            title="Ring every letter that makes a word from here. A run played with hints on counts as practice and cannot be shared.">Hints</button>
     <button type="button" id="how-to" class="ghost">How to play</button>
     <button type="button" id="new-game" class="ghost">New game</button>
   </div>
@@ -64,7 +65,8 @@
     <li><b>4 &rarr; 3</b> Drop <b>two</b> letters in a row, then add one.</li>
     <li><b>3 &rarr; 2</b> Drop <b>one</b> letter, then add one.</li>
     <li><b>2 &rarr; 1</b> If your two-letter word holds an <b>A</b> or an <b>I</b>,
-        it falls on its own. Those are the only one-letter words.</li>
+        that letter drops on its own and the run is done. A and I are the only
+        one-letter words.</li>
   </ol>
 
   <h3>Two rules</h3>
@@ -89,8 +91,8 @@
     <li><b>1, 2 or 3 points</b> for the letter it brings in, depending on how
         awkward that letter is to use. The small number in the corner of each
         key says which, the way a Scrabble tile does, and the letter carries
-        it onto the board once you play it. The last letter falls
-        without adding one, so that round is worth 2.</li>
+        it onto the board once you play it. The last round adds no letter of
+        its own, so it is worth 2.</li>
     <li><b>3 points</b> for getting all the way down to a single letter. Stop
         short and you lose them, so the expensive letter is not always worth
         taking.</li>
@@ -109,12 +111,13 @@
      for another go and giving up to see how it was done.</p>
 
   <h3>The one thing to plan for</h3>
-  <p class="tip">Nothing falls unless your <b>two-letter word holds an A or an
-     I</b>, so work out early where that letter is coming from. A and I obey
+  <p class="tip">You cannot reach a single letter unless your <b>two-letter
+     word contains an A or an I</b>, because those are the only one-letter
+     words. So work out early where that letter is coming from. A and I obey
      the same rule as every other letter: once one is on the board it can only
-     be <b>carried down</b>, never added again. If your opening word already
-     holds an A or an I, choose the splits that bring it all the way with you.
-     If it holds neither, keep one of them unspent for the final round.</p>
+     be <b>dropped down</b>, never added again. If your opening word already
+     contains an A or an I, choose the splits that carry it all the way. If it
+     contains neither, keep one of them unspent for the last round.</p>
 
   <h3>Hints</h3>
   <p>Turn <b>Hints</b> on and every letter that makes a word from where you

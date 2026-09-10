@@ -29,6 +29,7 @@ let landingFrom = 0;
 let hintsOn = false;
 let definitionFor = null;
 let giveUpArmed = false;
+let hintsArmed = false;
 
 // Wikimedia's own endpoint: no key, and the only free source that actually
 // carries the short Scrabble words. Blocked outright in some embeddings, which
@@ -549,12 +550,13 @@ function render() {
   els.undo.textContent = undoCosts ? `Undo \u2212${UNDO_COST}` : "Undo";
   els.giveUp.hidden = game.isOver;
   els.giveUp.textContent = giveUpArmed ? "Sure? Show the answer" : "Give up";
-  els.giveUp.classList.toggle("on", giveUpArmed);
+  els.giveUp.classList.toggle("armed", giveUpArmed);
   els.undo.title = game.answerShown
     ? "You have seen a perfect run, so this game is closed."
     : "";
-  els.hints.textContent = hintsOn ? "Hints on" : "Hints";
+  els.hints.textContent = hintsOn ? "Hints on" : hintsArmed ? "Turn on?" : "Hints";
   els.hints.classList.toggle("on", hintsOn);
+  els.hints.classList.toggle("armed", hintsArmed);
   els.hints.setAttribute("aria-pressed", String(hintsOn));
   renderKeyboard();
 }
@@ -671,16 +673,33 @@ function onGiveUp() {
   render();
 }
 
-/** Any other move cancels a half-pressed Give up. */
+/** Any other move cancels a half-pressed Give up or Hints. */
 function disarmGiveUp() {
   giveUpArmed = false;
+  hintsArmed = false;
 }
 
+/**
+ * Switching hints on costs you the ability to share the run, so the first tap
+ * says what they do and what they cost, and the second turns them on. Turning
+ * them off again is free and immediate.
+ */
 function toggleHints() {
-  hintsOn = !hintsOn;
-  // Turning hints on marks this run as practice for good, even if you turn
-  // them off again.
-  if (hintsOn) game.hintsUsed = true;
+  if (hintsOn) {
+    hintsOn = false;
+    hintsArmed = false;
+    setNote("");
+  } else if (!hintsArmed) {
+    hintsArmed = true;
+    setNote("Hints ring every letter that makes a word from here. This run " +
+      "then counts as practice and cannot be shared. Tap again to switch them on.");
+  } else {
+    hintsOn = true;
+    hintsArmed = false;
+    // Marks the run as practice for good, even if you turn them off again.
+    game.hintsUsed = true;
+    setNote("");
+  }
   render();
 }
 
@@ -691,6 +710,7 @@ function startNewGame() {
   game = new Game();
   game.hintsUsed = hintsOn;
   giveUpArmed = false;
+  hintsArmed = false;
   definitionFor = null;
   landingFrom = 0;
   setNote("");

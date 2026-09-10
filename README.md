@@ -27,7 +27,7 @@ are the only single letters that are words on their own. It is not a decision,
 so the game takes it for you.
 
 A sample run from PLANT: drop LAN, add D for LAND. Drop LA, add B for LAB.
-Drop A, add H for AH. The A then falls on its own and the game is over. That run
+Drop A, add H for AH. The A then drops on its own to finish. That run
 spends D, B, and H, and scores the full 11.
 
 The board shows where every letter went. Rows are placed so a dropped letter
@@ -41,9 +41,10 @@ every added letter is a new one and marking it would say nothing.
 
 ## The one thing to plan for
 
-Nothing falls unless the two-letter word holds an A or an I, and those obey the
-same no-reuse rule as every other letter: once one is on the board it can only
-be carried down, never added again. 59% of openers already hold one, and those
+You cannot reach a single letter unless the two-letter word contains an A or
+an I, because those are the only one-letter words. A and I obey the no-reuse
+rule like every other letter: once one is on the board it can only be dropped
+down, never added again. 59% of openers already hold one, and those
 runs are about choosing splits that bring it all the way down. The other 41%
 need one kept unspent for the final round.
 
@@ -56,8 +57,8 @@ need one kept unspent for the final round.
   2, and `fhvwykjxqz` pay 3. Each key carries its value in the corner.
 - **3 points** for reaching a single letter. Without it, stalling on a
   two-letter word holding no A or I costs nothing on about a third of deals,
-  because a 3-point letter the round before covers what the fall would have
-  paid. The bonus also means the greedy play of always grabbing the most
+  because a 3-point letter the round before covers what the last round would
+  have paid. The bonus also means the greedy play of always grabbing the most
   expensive letter is wrong about half the time, since it stalls out.
 - **Undo costs 1 point**, once there is a committed word to take back. Backing
   out of a split you have not committed yet is free. The total never goes below
@@ -100,6 +101,12 @@ Hints ring every letter that makes a word from the current position. It exists
 for people learning the game, so a run played with hints on is marked as
 practice and its Share button is withheld. Turning hints off again does not
 clear the mark.
+
+Because that cost cannot be undone, switching hints on takes two taps: the
+first says what they do and what they cost, the second turns them on. Any other
+move cancels a half-pressed one, and turning them off is a single tap. The
+button also carries the same explanation as hover text, which covers a mouse
+but not a phone, hence the two-step.
 
 ## Playing it
 

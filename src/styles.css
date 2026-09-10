@@ -199,6 +199,10 @@ button.primary { background: var(--new); border-color: var(--new); color: #fff; 
 .ghost.on { background: var(--new); border-color: var(--new); color: #fff; }
 .ghost.on:hover { border-color: var(--new); }
 
+/* Half-pressed: one more tap and it happens. */
+.ghost.armed { background: var(--keep); border-color: var(--keep); color: var(--keep-ink); }
+.ghost.armed:hover { border-color: var(--keep); }
+
 /* ---------- board ---------- */
 
 main {
