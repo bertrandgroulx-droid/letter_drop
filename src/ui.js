@@ -10,6 +10,7 @@ const els = {
   undo: document.getElementById("undo"),
   tallyDetail: document.getElementById("tally-detail"),
   breakdown: document.getElementById("breakdown"),
+  definition: document.getElementById("definition"),
   hints: document.getElementById("hints"),
   tallyLabel: document.getElementById("tally-label"),
   giveUp: document.getElementById("give-up"),
@@ -28,6 +29,7 @@ let game = new Game({ seed: requestedSeed() });
 let landingFrom = 0;
 let hintsOn = false;
 let definitionFor = null;
+let definitionIn = null;   // which list the open definition belongs under
 let giveUpArmed = false;
 let hintsArmed = false;
 
@@ -324,8 +326,39 @@ function wiktionaryLink(word, label) {
   return link;
 }
 
-function showDefinition(word) {
+/** An open book, so a word that can be looked up says so. */
+function bookIcon() {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 18 18");
+  svg.setAttribute("class", "book");
+  svg.setAttribute("aria-hidden", "true");
+  for (const d of [
+    "M9 5.2S7.6 4 5.2 4H2.5v9.2h2.7c2.4 0 3.8 1.2 3.8 1.2",
+    "M9 5.2S10.4 4 12.8 4h2.7v9.2h-2.7c-2.4 0-3.8 1.2-3.8 1.2",
+    "M9 5.2v9.2",
+  ]) {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", d);
+    svg.append(path);
+  }
+  return svg;
+}
+
+/** A word you can tap to find out what it means. */
+function lookupButton(word, where) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "bd-word lookup";
+  if (definitionFor === word && definitionIn === where) button.classList.add("open");
+  button.title = `What does ${word.toUpperCase()} mean?`;
+  button.append(word, bookIcon());
+  button.addEventListener("click", () => showDefinition(word, where));
+  return button;
+}
+
+function showDefinition(word, where) {
   definitionFor = word;
+  definitionIn = where;
   render();
   if (definitions.has(word)) return;
   lookUp(word).then(() => {
@@ -384,15 +417,12 @@ function renderBestRun() {
   list.append(...rows.map(([label, value, isWord]) => {
     const item = document.createElement("li");
 
-    const name = document.createElement(isWord ? "button" : "span");
-    name.className = "bd-word";
-    name.textContent = label;
-    if (isWord) {
-      name.type = "button";
-      name.classList.add("lookup");
-      name.title = `What does ${label.toUpperCase()} mean?`;
-      name.addEventListener("click", () => showDefinition(label));
-    }
+    const name = isWord
+      ? lookupButton(label, "run")
+      : Object.assign(document.createElement("span"), {
+          className: "bd-word",
+          textContent: label,
+        });
 
     const count = document.createElement("span");
     count.className = "bd-count";
@@ -403,7 +433,7 @@ function renderBestRun() {
   }));
   wrap.append(list);
 
-  if (definitionFor) wrap.append(renderDefinition());
+  if (definitionFor && definitionIn === "run") wrap.append(renderDefinition());
 
   const note = document.createElement("p");
   note.className = "best-run-note";
@@ -510,12 +540,16 @@ function renderBreakdown() {
     lines.push([label, `\u2212${game.score.penalty}`, true]);
   }
 
+  const words = new Set(game.breakdown.map((entry) => entry.word));
   els.breakdown.replaceChildren(...lines.map(([label, value, penalty]) => {
     const item = document.createElement("li");
 
-    const name = document.createElement("span");
-    name.className = "bd-word";
-    name.textContent = label;
+    const name = words.has(label)
+      ? lookupButton(label, "breakdown")
+      : Object.assign(document.createElement("span"), {
+          className: "bd-word",
+          textContent: label,
+        });
 
     const count = document.createElement("span");
     count.className = penalty ? "bd-count penalty" : "bd-count";
@@ -541,6 +575,9 @@ function render() {
   els.tallyLabel.textContent = `points of ${game.bestPossible}`;
   els.tallyDetail.textContent = tallyText();
   renderBreakdown();
+  els.definition.replaceChildren(
+    ...(definitionFor && definitionIn === "breakdown" ? [renderDefinition()] : [])
+  );
   const somethingToUndo =
     game.rows.length > 1 || game.selection.length > 0 || game.phase === "build";
   const canUndo = somethingToUndo && !game.answerShown;
@@ -638,6 +675,8 @@ function onEnter() {
     return shakeDraft();
   }
   landingFrom = game.rows.length - (result.fell ? 2 : 1);
+  lookUp(result.word);
+  if (result.fell) lookUp(result.fell);
   // No note on success. The score column already lists what the word was
   // worth, so the line goes back to saying what to do next.
   setNote("");
@@ -712,6 +751,7 @@ function startNewGame() {
   giveUpArmed = false;
   hintsArmed = false;
   definitionFor = null;
+  definitionIn = null;
   landingFrom = 0;
   setNote("");
   render();

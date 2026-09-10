@@ -70,8 +70,11 @@ can reveal one of the runs that reached it, and you can give up part way
 through to see it early, keeping whatever you have scored so far. Looking
 closes the game either way, so undo cannot walk you back into it with the
 answer in hand. Ties are common, so it is a perfect
-run rather than the perfect run. Tapping a word there shows its first sense, fetched from Wiktionary's REST
-endpoint, which is the only network call the game makes.
+run rather than the perfect run. Every word you make is listed in the score column with a small book icon, and
+tapping one shows its first sense. The same works for the words in a revealed
+perfect run. Definitions come from Wiktionary's REST endpoint, which is the
+only network call the game makes. A word is fetched as soon as you make it, so
+the tap answers immediately.
 
 Wiktionary is used because it is the only free source that carries the short
 Scrabble words. Bundling definitions was tried and abandoned: Webster's 1913

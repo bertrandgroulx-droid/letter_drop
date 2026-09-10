@@ -416,7 +416,30 @@ button.lookup {
   cursor: pointer;
 }
 
-button.lookup:hover { color: var(--new); }
+button.lookup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding-block: 0.3rem;   /* a thumb-sized target, not just the text */
+  text-decoration: none;
+}
+
+button.lookup:hover, button.lookup.open { color: var(--new); }
+button.lookup.open .book { opacity: 1; }
+
+.book {
+  width: 0.95em;
+  height: 0.95em;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.45;
+}
+
+button.lookup:hover .book { opacity: 1; }
 
 .definition {
   margin: 0.6rem 0 0;
