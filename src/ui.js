@@ -242,8 +242,8 @@ function defaultNote() {
     case "select": {
       const need = game.keepCount;
       const chosen = game.selection.length;
-      return `Select <b>${need}</b> letter${need === 1 ? "" : "s"} in a row to drop. ` +
-        `<b>${chosen}/${need}</b> chosen.`;
+      return `Drop <b>${need}</b> letter${need === 1 ? "" : "s"} in a row into ` +
+        `the next word. <b>${chosen}/${need}</b> chosen.`;
     }
     case "build": {
       const where = game.side === "front" ? "in front of" : "behind";
@@ -251,7 +251,8 @@ function defaultNote() {
         `to make a ${game.block.length + 1}-letter word.`;
     }
     case "stuck":
-      return `No word can be made from <b>${word}</b>. Undo and try another split.`;
+      return `No word can be made from <b>${word}</b>. Undo and drop a ` +
+        `different run of letters.`;
     default:
       return "";
   }
@@ -369,7 +370,7 @@ function shakeDraft() {
 
 function typeLetter(letter) {
   if (game.phase !== "build") {
-    setNote(game.phase === "select" ? "Choose your letters first." : "", game.phase === "select");
+    setNote(game.phase === "select" ? "Drop your letters first." : "", game.phase === "select");
     return render();
   }
   const result = game.setLetter(letter);

@@ -5,9 +5,11 @@ progressively shorter words until you are down to a single letter.
 
 ## The rules
 
-Each round you keep a run of consecutive letters from the current word and add
-one more letter to the front or the back. The kept letters stay side by side and
-in order, so the added letter always lands on an end, never in the middle.
+Each round you drop a run of consecutive letters from the current word down
+into the next one, and add one more letter to the front or the back. Dropping
+is not discarding: the letters you drop are the ones you take with you, and
+whatever you leave behind is gone. They land side by side and in the same
+order, so the added letter always goes on an end, never in the middle.
 
 The letter you add must be one you have not used yet. Every letter already on
 the board, the opening word included, is spent. That is what makes the game
@@ -24,8 +26,8 @@ The last round only works if the two-letter word holds an A or an I, since those
 are the only single letters that are words on their own. It is not a decision,
 so the game takes it for you.
 
-A sample run from PLANT: keep LAN, add D for LAND. Keep LA, add B for LAB. Keep
-A, add H for AH. The A then falls on its own and the game is over. That run
+A sample run from PLANT: drop LAN, add D for LAND. Drop LA, add B for LAB.
+Drop A, add H for AH. The A then falls on its own and the game is over. That run
 spends D, B, and H, and scores the full 11.
 
 ## The one thing to plan for
