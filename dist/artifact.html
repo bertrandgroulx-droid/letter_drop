@@ -1686,12 +1686,17 @@ function keepDefinitionOnScreen() {
 }
 
 function tallyText() {
-  const words = game.wordsMade;
-  if (!words) return game.hintsUsed ? "practice run" : "no words yet";
-  const fresh = game.newLetters.length;
   const plural = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
-  const line = plural(words, "word") + (fresh ? ` \u00b7 ${plural(fresh, "new letter")}` : "");
-  return game.hintsUsed ? `${line} \u00b7 practice` : line;
+  const runs = game.bestRun.count;
+  const parts = [runs === 1 ? "1 way to get there" : `${runs} ways to get there`];
+
+  if (game.wordsMade) {
+    parts.push(plural(game.wordsMade, "word"));
+    const fresh = game.newLetters.length;
+    if (fresh) parts.push(plural(fresh, "new letter"));
+  }
+  if (game.hintsUsed) parts.push("practice");
+  return parts.join(" \u00b7 ");
 }
 
 function renderBreakdown() {
