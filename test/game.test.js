@@ -456,3 +456,23 @@ test("an undo can cost you a perfect run even on the best line", () => {
   assert.equal(game.score.penalty, 1);
   assert.equal(game.isPerfect, false, "the point lost to undo is a point short");
 });
+
+test("the example run avoids handing back the run just played", () => {
+  const game = new Game({ seed: "plant" });
+  play(game, [1, 2, 3], "f", "front");   // the very line the search finds first
+  play(game, [2, 3], "y");
+  play(game, [0], "h");
+
+  const played = game.rows.slice(1).map((row) => row.word).join(" ");
+  assert.equal(game.bestRun.line.map((e) => e.word).join(" "), played, "they matched");
+  assert.notEqual(game.exampleRun.map((e) => e.word).join(" "), played, "so show another");
+
+  // Whatever it shows still has to be worth the same.
+  const worth = game.exampleRun.reduce((sum, e) => sum + e.points, 0) + FINISH_BONUS;
+  assert.equal(worth, game.bestPossible);
+});
+
+test("the example run is a best run when nothing was played", () => {
+  const game = new Game({ seed: "plant" });
+  assert.deepEqual(game.exampleRun, game.bestRun.line);
+});

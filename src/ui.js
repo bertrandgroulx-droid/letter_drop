@@ -320,7 +320,7 @@ async function lookUp(word) {
  * rather than starting a request the player has to wait on.
  */
 function prefetchDefinitions() {
-  for (const word of [game.seed, ...game.bestRun.line.map((e) => e.word)]) {
+  for (const word of [game.seed, ...game.exampleRun.map((e) => e.word)]) {
     lookUp(word).then(() => {
       if (definitionFor === word) render();
     });
@@ -439,7 +439,7 @@ function renderBestRun() {
 
   const rows = [
     [game.seed, "dealt", true],
-    ...game.bestRun.line.map((entry) => [entry.word, `+${entry.points}`, true]),
+    ...game.exampleRun.map((entry) => [entry.word, `+${entry.points}`, true]),
     ["finished", `+${FINISH_BONUS}`, false],
   ];
 

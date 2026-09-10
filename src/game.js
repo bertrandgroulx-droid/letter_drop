@@ -85,11 +85,14 @@ export function playableLetters(block, side, dictionary = DICTIONARY, used = NOT
 }
 
 /**
- * The highest-scoring run from this position, how many runs tie for it, and
- * the words one of them goes through.
+ * The highest-scoring run from this position, how many runs tie for it, and a
+ * couple of examples. Two is enough: it lets the game show a run other than
+ * the one the player just made.
  */
+const EXAMPLES = 2;
+
 function bestRunFrom(word, used, dictionary) {
-  if (word.length === 1) return { score: FINISH_BONUS, count: 1, line: [] };
+  if (word.length === 1) return { score: FINISH_BONUS, count: 1, lines: [[]] };
 
   // The last letter drops on its own, so it is not a choice and must not
   // multiply the count when a two-letter word holds both an A and an I.
@@ -98,21 +101,22 @@ function bestRunFrom(word, used, dictionary) {
     : nextWords(word, dictionary, used);
 
   // Stalling here and now: one way to do it, and it scores nothing further.
-  let best = { score: 0, count: 1, line: [] };
+  let best = { score: 0, count: 1, lines: [[]] };
   for (const next of options) {
     const added = [...next].find((c) => !used.has(c)) ?? null;
     const points = POINTS_PER_WORD + (added ? letterValue(added) : 0);
     const rest = bestRunFrom(next, new Set([...used, ...next]), dictionary);
     const score = points + rest.score;
+    const grown = rest.lines.map((rest) => [{ word: next, added, points }, ...rest]);
 
     if (score > best.score) {
+      best = { score, count: rest.count, lines: grown.slice(0, EXAMPLES) };
+    } else if (score === best.score) {
       best = {
         score,
-        count: rest.count,
-        line: [{ word: next, added, points }, ...rest.line],
+        count: best.count + rest.count,
+        lines: [...best.lines, ...grown].slice(0, EXAMPLES),
       };
-    } else if (score === best.score) {
-      best = { ...best, count: best.count + rest.count };
     }
   }
   return best;
@@ -218,9 +222,21 @@ export class Game {
    */
   get bestRun() {
     if (this.best === null) {
-      this.best = bestRunFrom(this.seed, new Set(this.seed), this.dictionary);
+      const found = bestRunFrom(this.seed, new Set(this.seed), this.dictionary);
+      this.best = { ...found, line: found.lines[0] };
     }
     return this.best;
+  }
+
+  /**
+   * A best line to show the player, preferring one they did not just play.
+   * Showing somebody their own run back teaches them nothing.
+   */
+  get exampleRun() {
+    const played = this.rows.slice(1).map((row) => row.word).join(" ");
+    const { lines } = this.bestRun;
+    const fresh = lines.find((line) => line.map((e) => e.word).join(" ") !== played);
+    return fresh ?? lines[0];
   }
 
   get bestPossible() {
