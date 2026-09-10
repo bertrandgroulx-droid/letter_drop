@@ -198,6 +198,24 @@ button.primary { background: var(--new); border-color: var(--new); color: #fff; 
 button.quiet { background: var(--surface); border-color: var(--line); color: var(--ink-dim); }
 button.quiet:hover { color: var(--ink); }
 .ghost { font-size: 0.85rem; }
+
+.level select {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
 .ghost.on { background: var(--new); border-color: var(--new); color: #fff; }
 .ghost.on:hover { border-color: var(--new); }
 

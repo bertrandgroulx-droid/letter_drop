@@ -8,8 +8,9 @@ import {
   letterValue,
   nextWords,
   playableLetters,
+  randomSeed,
 } from "../src/game.js";
-import { DICTIONARY, SEED_WORDS } from "../src/words.js";
+import { DICTIONARY, SEEDS, SEED_WORDS } from "../src/words.js";
 
 /** Choose a block, pick an end, add a letter, and commit. */
 function play(game, indices, letter, side = "end") {
@@ -375,4 +376,50 @@ test("counting agrees with an exhaustive walk on a small dictionary", () => {
   assert.equal(count, 2, "ABCF and ABCV, and nothing else");
   assert.deepEqual(line.map((entry) => entry.word).slice(1), ["abh", "ai", "a"]);
   assert.equal(score, 5 + 5 + 3 + 2 + FINISH_BONUS);
+});
+
+test("every opener is graded, and the grades partition the openers", () => {
+  const all = [...SEEDS.easy, ...SEEDS.hard, ...SEEDS.brutal];
+  assert.equal(all.length, SEED_WORDS.length, "no opener is graded twice or missed");
+  assert.equal(new Set(all).size, all.length);
+  for (const tier of ["easy", "hard", "brutal"]) {
+    assert.ok(SEEDS[tier].length > 0, `${tier} has deals in it`);
+  }
+});
+
+test("a level deals only from its own pool", () => {
+  const always = () => 0;
+  assert.equal(randomSeed("easy", always), SEEDS.easy[0]);
+  assert.equal(randomSeed("brutal", always), SEEDS.brutal[0]);
+  assert.equal(randomSeed("any", always), SEED_WORDS[0]);
+  assert.equal(randomSeed("nonsense", always), SEED_WORDS[0], "an unknown level falls back to all");
+});
+
+test("easy deals are the ones where the obvious play is the best play", () => {
+  // Replays the grader: take the fattest letter each round and see if it wins.
+  const greedy = (seed) => {
+    let used = new Set(seed), word = seed, total = 0;
+    while (word.length > 1) {
+      const moves = word.length === 2
+        ? [...word].filter((c) => "ai".includes(c)).slice(0, 1)
+        : nextWords(word, DICTIONARY, used);
+      if (!moves.length) return total;
+      const value = (w) => {
+        const fresh = [...w].find((c) => !used.has(c));
+        return 2 + (fresh ? letterValue(fresh) : 0);
+      };
+      const pick = moves.reduce((a, b) => (value(b) > value(a) ? b : a));
+      total += value(pick);
+      used = new Set([...used, ...pick]);
+      word = pick;
+    }
+    return total + FINISH_BONUS;
+  };
+
+  for (const seed of SEEDS.easy.slice(0, 25)) {
+    assert.equal(greedy(seed), new Game({ seed }).bestPossible, `${seed} should be easy`);
+  }
+  for (const seed of SEEDS.hard.slice(0, 25)) {
+    assert.ok(greedy(seed) < new Game({ seed }).bestPossible, `${seed} should not be easy`);
+  }
 });

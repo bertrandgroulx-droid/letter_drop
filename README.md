@@ -109,6 +109,20 @@ The on-screen keyboard greys out every letter that has appeared, whether it
 came from the opening word or from a word you made. Those keys are also
 disabled, because a spent letter can never be played again.
 
+## Levels
+
+Every opener is graded when the word data is built. **Easy** deals are the ones
+where the obvious play, taking the most valuable letter available, is also the
+best play. **Hard** deals are where it is not, and chasing the fat letter
+usually strands you. **Brutal** deals are vetoed out of the other two: their
+best runs need words most people have never met, measured by how much of the
+ceiling is unreachable using only common words.
+
+The split lands at 41% easy, 54% hard and 5% brutal. Grading by these two
+signals rather than by counting solutions is deliberate: solution counts do not
+predict difficulty, because perfect runs and total runs scale together, so the
+count measures the size of a deal's tree rather than how hard it plays.
+
 ## Hints
 
 Hints ring every letter that makes a word from the current position. It exists
@@ -175,10 +189,11 @@ src/styles.css        styles
 src/game.js           the rules, with no DOM in sight
 src/ui.js             rendering, keyboard, and input
 src/words.js          generated word data, do not edit
-tools/build_words.py  regenerates src/words.js
+tools/build_words.py  regenerates src/words.js and grades the openers
 tools/build_single.py packs dev.html and src/ into index.html
 tools/build_icons.mjs redraws icon.svg and the home screen icons
 test/game.test.js     tests for the rules
+test/instructions.test.js  checks How to play still matches the rules
 manifest.webmanifest  what a phone reads when adding the game to a home screen
 index.html            generated, do not edit
 icon.svg, icons/      generated, do not edit

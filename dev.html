@@ -22,6 +22,14 @@
 <header class="bar">
   <h1>Letter&nbsp;Drop</h1>
   <div class="bar-right">
+    <label class="level"><span class="visually-hidden">Level</span>
+      <select id="level">
+        <option value="any">Any level</option>
+        <option value="easy">Easy</option>
+        <option value="hard">Hard</option>
+        <option value="brutal">Brutal</option>
+      </select>
+    </label>
     <button type="button" id="hints" class="ghost" aria-pressed="false"
             title="Ring every letter that makes a word from here. A run played with hints on counts as practice and cannot be shared.">Hints</button>
     <button type="button" id="how-to" class="ghost">How to play</button>
@@ -84,8 +92,11 @@
   <p>Tap the letters you want to take down. They drop as soon as you have
      enough of them. Type a
      letter, tap the empty slot at either end (or use the arrow keys) to choose
-     which end it lands on, then tap the green check. Words come from a
-     Scrabble dictionary, so a few odd ones are legal.</p>
+     which end it lands on, then tap the green check.</p>
+  <p>Words come from NWL2023, the list used for tournament Scrabble in North
+     America, so a few odd ones are legal. Every word on the board has a
+     <b>book</b> beside it: tap that for the meaning, and again to put it
+     away.</p>
 
   <h3>Scoring</h3>
   <ul>
@@ -106,7 +117,9 @@
         below zero.</li>
   </ul>
   <p class="max">Every deal has its own best possible score, shown beside your
-     running total from the start. Reaching it is a balance: the awkward letters
+     running total from the start, along with how many different runs reach
+     it. There are usually dozens, so the one the game shows you afterwards is
+     rarely the one you found. Reaching it is a balance: the awkward letters
      pay more, but taking one without a route to the bottom costs you the
      finish, and a bad split can leave you with nothing to make at all. When a
      game ends you can reveal a run that scored the lot, to see what you
@@ -123,6 +136,13 @@
      be <b>dropped down</b>, never added again. If your opening word already
      contains an A or an I, choose the splits that carry it all the way. If it
      contains neither, keep one of them unspent for the last round.</p>
+
+  <h3>Levels</h3>
+  <p>Every opening word is graded when the game is built. On <b>easy</b> deals
+     the obvious play, taking the most valuable letter you can, is also the
+     best play. On <b>hard</b> ones it is not, and going for the fat letter
+     will usually strand you. <b>Brutal</b> deals are those whose best runs go
+     through words most people have never met.</p>
 
   <h3>Hints</h3>
   <p>Turn <b>Hints</b> on and every letter that makes a word from where you

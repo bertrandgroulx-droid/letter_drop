@@ -1,4 +1,4 @@
-import { FINISH_BONUS, Game, STRIKE_LIMIT, UNDO_COST, letterValue, playableLetters } from "./game.js";
+import { FINISH_BONUS, Game, LEVELS, STRIKE_LIMIT, UNDO_COST, letterValue, playableLetters, randomSeed } from "./game.js";
 import { DICTIONARY } from "./words.js";
 
 const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
@@ -12,6 +12,7 @@ const els = {
   breakdown: document.getElementById("breakdown"),
   result: document.getElementById("result"),
   hints: document.getElementById("hints"),
+  level: document.getElementById("level"),
   tallyLabel: document.getElementById("tally-label"),
   giveUp: document.getElementById("give-up"),
   strikes: document.getElementById("strikes"),
@@ -26,7 +27,19 @@ function requestedSeed() {
   return word && DICTIONARY[5]?.has(word) ? word : undefined;
 }
 
-let game = new Game({ seed: requestedSeed() });
+const store = {
+  get(key) {
+    try { return localStorage.getItem(key); } catch { return null; }
+  },
+  set(key, value) {
+    try { localStorage.setItem(key, value); } catch { /* private mode */ }
+  },
+};
+
+let level = LEVELS.includes(store.get("letterdrop.level"))
+  ? store.get("letterdrop.level")
+  : "any";
+let game = new Game({ seed: requestedSeed() ?? randomSeed(level) });
 let landingFrom = 0;
 let hintsOn = false;
 let definitionFor = null;
@@ -43,14 +56,6 @@ const definitions = new Map();
 let note = "";
 let noteIsError = false;
 
-const store = {
-  get(key) {
-    try { return localStorage.getItem(key); } catch { return null; }
-  },
-  set(key, value) {
-    try { localStorage.setItem(key, value); } catch { /* private mode */ }
-  },
-};
 
 /* ---------- rendering ---------- */
 
@@ -324,7 +329,7 @@ function prefetchDefinitions() {
 function wiktionaryLink(word, label) {
   const link = document.createElement("a");
   link.className = "definition-source";
-  link.href = `https://en.wiktionary.org/wiki/${encodeURIComponent(word)}`;
+  link.href = `https://en.wiktionary.org/wiki/${encodeURIComponent(word)}#English`;
   link.target = "_blank";
   link.rel = "noopener";
   link.textContent = label;
@@ -788,7 +793,7 @@ function startNewGame() {
   try {
     history.replaceState(null, "", location.pathname);
   } catch { /* sandboxed frames refuse history writes */ }
-  game = new Game();
+  game = new Game({ seed: randomSeed(level) });
   game.hintsUsed = hintsOn;
   giveUpArmed = false;
   hintsArmed = false;
@@ -803,6 +808,11 @@ function startNewGame() {
 
 els.undo.addEventListener("click", onBackspace);
 els.newGame.addEventListener("click", startNewGame);
+els.level.addEventListener("change", () => {
+  level = els.level.value;
+  store.set("letterdrop.level", level);
+  startNewGame();
+});
 els.giveUp.addEventListener("click", onGiveUp);
 els.hints.addEventListener("click", toggleHints);
 els.howTo.addEventListener("click", openRules);
@@ -827,6 +837,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+els.level.value = level;
 if (!store.get("letterdrop.seen")) {
   store.set("letterdrop.seen", "1");
   openRules();

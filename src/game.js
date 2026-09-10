@@ -1,4 +1,4 @@
-import { DICTIONARY, SEED_WORDS } from "./words.js";
+import { DICTIONARY, SEEDS, SEED_WORDS } from "./words.js";
 
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
 const SINGLE_LETTER_WORDS = ["a", "i"];
@@ -68,8 +68,11 @@ export function nextWords(word, dictionary = DICTIONARY, used = NOTHING_USED) {
   return [...found].sort();
 }
 
-export function randomSeed(random = Math.random) {
-  return SEED_WORDS[Math.floor(random() * SEED_WORDS.length)];
+export const LEVELS = ["any", "easy", "hard", "brutal"];
+
+export function randomSeed(level = "any", random = Math.random) {
+  const pool = SEEDS[level] ?? SEED_WORDS;
+  return pool[Math.floor(random() * pool.length)];
 }
 
 /** The letters that make a real word when added to `block` on `side`. */
