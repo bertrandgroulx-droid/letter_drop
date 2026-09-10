@@ -1,7 +1,28 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Game, PERFECT_SCORE, blocks, keepCount, nextWords } from "../src/game.js";
+import {
+  Game,
+  PERFECT_SCORE,
+  blocks,
+  keepCount,
+  nextWords,
+} from "../src/game.js";
 import { DICTIONARY, SEED_WORDS } from "../src/words.js";
+
+/** Choose a block, pick an end, add a letter, and commit. */
+function play(game, indices, letter, side = "end") {
+  indices.forEach((i) => game.toggleSelect(i));
+  game.setSide(side);
+  game.setLetter(letter);
+  return game.submit();
+}
+
+/** PLANT to LAND to LAB to AH, which then falls to A. A perfect run. */
+function perfectRun(game) {
+  play(game, [1, 2, 3], "d");
+  play(game, [0, 1], "b");
+  return play(game, [1], "h");
+}
 
 test("each round keeps two fewer letters than the word", () => {
   assert.deepEqual([5, 4, 3].map(keepCount), [3, 2, 1]);
@@ -16,7 +37,6 @@ test("there are always three ways to split a word", () => {
 test("next words keep the block intact and add one letter on an end", () => {
   const next = nextWords("plant");
   assert.ok(next.includes("land"), "LAN + D");
-  assert.ok(next.includes("plan"), "P + LAN");
   assert.ok(next.every((w) => w.length === 4));
   assert.ok(
     next.every((w) => blocks("plant", 3).some(([a, b]) => {
@@ -26,6 +46,14 @@ test("next words keep the block intact and add one letter on an end", () => {
     "every result still holds one of the three blocks, whole and in order"
   );
   assert.ok(!next.includes("tarp"), "letters may not be reordered");
+});
+
+test("next words never reuse a letter already on the board", () => {
+  const used = new Set("plant");
+  const next = nextWords("plant", DICTIONARY, used);
+  assert.ok(next.includes("land"), "D is still free");
+  assert.ok(!next.includes("plan"), "P is already on the board");
+  assert.ok(next.every((w) => [...w].filter((c) => !used.has(c)).length === 1));
 });
 
 test("a two-letter word only drops to the A or I it contains", () => {
@@ -50,6 +78,18 @@ test("the drop happens as soon as enough letters are chosen", () => {
   assert.equal(game.block, "lan");
 });
 
+test("a letter already on the board is refused", () => {
+  const game = new Game({ seed: "plant" });
+  [1, 2, 3].forEach((i) => game.toggleSelect(i));
+
+  const reused = game.setLetter("p");
+  assert.equal(reused.ok, false);
+  assert.match(reused.reason, /already on the board/);
+  assert.equal(game.letter, "", "the slot stays empty");
+
+  assert.equal(game.setLetter("d").ok, true, "D has not been used");
+});
+
 test("a word not in the list is refused", () => {
   const game = new Game({ seed: "plant" });
   [1, 2, 3].forEach((i) => game.toggleSelect(i));
@@ -60,47 +100,22 @@ test("a word not in the list is refused", () => {
   assert.equal(game.phase, "build", "the player stays put and can try again");
 });
 
-test("a full run scores two a word plus one for each new letter", () => {
+test("a clean run scores every point on offer", () => {
   const game = new Game({ seed: "plant" });
-  [1, 2, 3].forEach((i) => game.toggleSelect(i));
-  game.setLetter("d");
-  assert.ok(game.submit().ok, "LAND");
+  perfectRun(game);
 
-  [0, 1].forEach((i) => game.toggleSelect(i));
-  game.setLetter("d");
-  assert.ok(game.submit().ok, "LAD");
-
-  game.toggleSelect(2);
-  game.setSide("front");
-  game.setLetter("a");
-  assert.ok(game.submit().ok, "AD");
-
-  assert.equal(game.phase, "won", "the A falls without being asked");
-
-  assert.deepEqual(game.rows.map((r) => r.word), ["plant", "land", "lad", "ad", "a"]);
-  assert.deepEqual(game.newLetters, ["d"]);
-  assert.deepEqual({ ...game.score, total: game.score.total }, { words: 8, letters: 1, total: 9 });
+  assert.deepEqual(game.rows.map((r) => r.word), ["plant", "land", "lab", "ah", "a"]);
+  assert.equal(game.phase, "won");
+  assert.deepEqual(game.newLetters, ["b", "d", "h"]);
+  assert.deepEqual(game.score, { words: 8, letters: 3, penalty: 0, total: PERFECT_SCORE });
 });
 
 test("the last letter falls on its own", () => {
   const game = new Game({ seed: "plant" });
-  [1, 2, 3].forEach((i) => game.toggleSelect(i));
-  game.setLetter("d");
-  game.submit();
-  [0, 1].forEach((i) => game.toggleSelect(i));
-  game.setLetter("d");
-  game.submit();
-
-  game.toggleSelect(2);
-  game.setSide("front");
-  game.setLetter("a");
-  const result = game.submit();
-
-  assert.equal(result.word, "ad");
-  assert.equal(result.fell, "a", "AD reports the letter that fell");
+  const result = perfectRun(game);
+  assert.equal(result.word, "ah");
+  assert.equal(result.fell, "a", "AH reports the letter that fell");
   assert.equal(game.currentWord, "a");
-  assert.equal(game.phase, "won");
-  assert.equal(game.score.words, 8, "the fall still scores as a word");
 });
 
 test("a two-letter word without an A or I is the end of the road", () => {
@@ -113,86 +128,52 @@ test("a two-letter word without an A or I is the end of the road", () => {
 
 test("undo steps back past the letter that fell on its own", () => {
   const game = new Game({ seed: "plant" });
-  [1, 2, 3].forEach((i) => game.toggleSelect(i));
-  game.setLetter("d");
-  game.submit();
-  [0, 1].forEach((i) => game.toggleSelect(i));
-  game.setLetter("d");
-  game.submit();
-  game.toggleSelect(2);
-  game.setSide("front");
-  game.setLetter("a");
-  game.submit();
-
-  assert.equal(game.phase, "won");
+  perfectRun(game);
   game.undo();
-  assert.equal(game.currentWord, "lad", "back to the last real choice, not to AD");
+  assert.equal(game.currentWord, "lab", "back to the last real choice, not to AH");
   assert.equal(game.phase, "select");
 });
 
-test("undo walks back one word at a time", () => {
+test("undo costs a point once there is a word to take back", () => {
   const game = new Game({ seed: "plant" });
-  [1, 2, 3].forEach((i) => game.toggleSelect(i));
-  game.setLetter("d");
-  game.submit();
-  assert.equal(game.currentWord, "land");
+  play(game, [1, 2, 3], "d");
+  assert.equal(game.score.total, 3);
+
   game.undo();
   assert.equal(game.currentWord, "plant");
-  assert.equal(game.rows[0].kept, null, "the old split is cleared too");
-  assert.equal(game.phase, "select");
-  assert.equal(game.score.total, 0);
+  assert.equal(game.undos, 1);
+  assert.equal(game.score.penalty, 1);
+  assert.equal(game.score.total, 0, "the score never goes below zero");
+
+  play(game, [1, 2, 3], "d");
+  assert.equal(game.score.total, 2, "three points for LAND, less the undo");
 });
 
-test("undo backs out of a split before it backs out of a word", () => {
+test("backing out of a split you have not committed is free", () => {
   const game = new Game({ seed: "plant" });
   [1, 2, 3].forEach((i) => game.toggleSelect(i));
   assert.equal(game.phase, "build");
   game.undo();
   assert.equal(game.phase, "select");
-  assert.equal(game.currentWord, "plant");
+  assert.equal(game.undos, 0, "nothing was committed, so nothing is charged");
   assert.deepEqual(game.selection, []);
 });
 
 test("a dead end is reported instead of silently accepted", () => {
   const dictionary = { ...DICTIONARY, 3: new Set(["cat"]) };
   const game = new Game({ seed: "plant", dictionary });
-  [1, 2, 3].forEach((i) => game.toggleSelect(i));
-  game.setLetter("d");
-  game.submit();
+  play(game, [1, 2, 3], "d");
   assert.equal(game.phase, "stuck", "no 3-letter word survives from LAND");
-});
-
-test("every opening word can be played to a single letter", () => {
-  const solve = (word, seen = new Set()) => {
-    if (word.length === 1) return true;
-    if (seen.has(word)) return false;
-    seen.add(word);
-    return nextWords(word).some((next) => solve(next, seen));
-  };
-  const step = Math.floor(SEED_WORDS.length / 150);
-  const sample = SEED_WORDS.filter((_, i) => i % step === 0);
-  const failures = sample.filter((word) => !solve(word));
-  assert.deepEqual(failures, [], "unsolvable openers");
 });
 
 test("the per-word breakdown adds up to the score", () => {
   const game = new Game({ seed: "plant" });
-  [1, 2, 3].forEach((i) => game.toggleSelect(i));
-  game.setLetter("d");
-  game.submit();
-  [0, 1].forEach((i) => game.toggleSelect(i));
-  game.setLetter("d");
-  game.submit();
-  game.toggleSelect(2);
-  game.setSide("front");
-  game.setLetter("a");
-  game.submit();
-
+  perfectRun(game);
   assert.deepEqual(game.breakdown, [
-    { word: "land", newLetter: "d", points: 3, max: 3 },
-    { word: "lad", newLetter: null, points: 2, max: 3 },
-    { word: "ad", newLetter: null, points: 2, max: 3 },
-    { word: "a", newLetter: null, points: 2, max: 2 },
+    { word: "land", newLetter: "d", points: 3 },
+    { word: "lab", newLetter: "b", points: 3 },
+    { word: "ah", newLetter: "h", points: 3 },
+    { word: "a", newLetter: null, points: 2 },
   ]);
   assert.equal(
     game.breakdown.reduce((sum, entry) => sum + entry.points, 0),
@@ -200,19 +181,18 @@ test("the per-word breakdown adds up to the score", () => {
   );
 });
 
-test("only the word that first brings a letter in scores for it", () => {
-  const game = new Game({ seed: "plant" });
-  [1, 2, 3].forEach((i) => game.toggleSelect(i));
-  game.setLetter("d");
-  game.submit();
-  assert.equal(game.breakdown[0].points, 3, "LAND earns for the D");
-  [1, 2].forEach((i) => game.toggleSelect(i));
-  game.setLetter("e");
-  game.submit();
-  assert.equal(game.breakdown[1].newLetter, "e", "END brings in the E");
-  assert.equal(game.breakdown[1].points, 3);
-});
-
 test("a perfect game is every word plus every new letter", () => {
   assert.equal(PERFECT_SCORE, 11);
+});
+
+test("every opening word can be played to a single letter without reusing one", () => {
+  const solve = (word, used) =>
+    word.length === 1 ||
+    nextWords(word, DICTIONARY, used).some((next) =>
+      solve(next, new Set([...used, ...next])));
+
+  const step = Math.floor(SEED_WORDS.length / 150);
+  const sample = SEED_WORDS.filter((_, i) => i % step === 0);
+  const failures = sample.filter((word) => !solve(word, new Set(word)));
+  assert.deepEqual(failures, [], "unsolvable openers");
 });

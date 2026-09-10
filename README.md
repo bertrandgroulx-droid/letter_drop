@@ -6,8 +6,12 @@ progressively shorter words until you are down to a single letter.
 ## The rules
 
 Each round you keep a run of consecutive letters from the current word and add
-one new letter to the front or the back. The kept letters stay side by side and
-in order, so the new letter always lands on an end, never in the middle.
+one more letter to the front or the back. The kept letters stay side by side and
+in order, so the added letter always lands on an end, never in the middle.
+
+The letter you add must be one you have not used yet. Every letter already on
+the board, the opening word included, is spent. That is what makes the game
+hard: your options narrow every round.
 
 | Round | Keep | Add | Makes |
 | --- | --- | --- | --- |
@@ -20,18 +24,23 @@ The last round only works if the two-letter word holds an A or an I, since those
 are the only single letters that are words on their own. It is not a decision,
 so the game takes it for you.
 
-A sample run from PLANT: keep LAN, add D for LAND. Keep LA, add D for LAD. Keep
-D, add A for AD. The A then falls on its own and the game is over.
+A sample run from PLANT: keep LAN, add D for LAND. Keep LA, add B for LAB. Keep
+A, add H for AH. The A then falls on its own and the game is over. That run
+spends D, B, and H, and scores the full 11.
 
 ## Scoring
 
 - **2 points** for every word you make. The opening word is dealt, not earned,
   so a clean run to a single letter is 8 points.
-- **1 point** for each different letter you use that was not in the opening
-  word. There are three chances to add a letter, so the ceiling is 11.
+- **1 point** for the new letter each word brings in. There are three chances to
+  add a letter, so the ceiling is 11.
+- **Undo costs 1 point**, once there is a committed word to take back. Backing
+  out of a split you have not committed yet is free.
 
 The on-screen keyboard greys out every letter that has appeared, whether it
-came from the opening word or from a word you made. That is its only marking.
+came from the opening word or from a word you made. Those keys are also
+disabled, because a spent letter can never be played again. That is its only
+marking.
 
 ## Playing it
 
@@ -89,10 +98,11 @@ python3 tools/build_single.py
 ## The word list
 
 `src/words.js` holds every legal 2- to 5-letter word (14,084 of them) plus the
-3,074 five-letter openers the game deals. Openers are drawn from common words
-only, and each one is verified solvable before it goes in the list, so you can
-never be dealt a puzzle that cannot be finished. Getting stuck is always a
-matter of which split you chose, and Undo walks it back.
+3,059 five-letter openers the game deals. Openers are drawn from common words
+only, and each one is verified solvable under the no-reused-letters rule before
+it goes in the list, so you can never be dealt a puzzle that cannot be
+finished. Getting stuck is always a matter of which split you chose. Undo walks
+it back, for a point.
 
 To rebuild it, fetch the two source lists and run the generator:
 

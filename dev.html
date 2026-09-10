@@ -52,14 +52,19 @@
     <li><b>3 &rarr; 2</b> Select <b>one</b> letter. Add one letter in front or behind.</li>
     <li><b>2 &rarr; 1</b> If your two-letter word holds an <b>A</b> or an <b>I</b>, let it fall. Those are the only one-letter words.</li>
   </ol>
-  <p>The letters you keep stay in the same order, side by side. The new letter
+  <p>The letters you keep stay side by side and in order. The letter you add
      goes on one end, never in the middle.</p>
+  <p><b>Every letter you add must be one you have not used yet.</b> Anything
+     already on the board, including the letters of the opening word, is greyed
+     out on the keyboard and cannot be played again.</p>
   <h3>Scoring</h3>
   <ul>
     <li><b>2 points</b> for every word you make.</li>
-    <li><b>1 point</b> for each different letter you use that was not in the opening word.</li>
+    <li><b>1 point</b> for the new letter each word brings in.</li>
+    <li><b>Undo costs 1 point</b>, once there is a word to take back. Backing
+        out of a split you have not committed is free.</li>
   </ul>
-  <p class="max">A clean run to a single letter is 8 points, plus up to 3 for new letters.</p>
+  <p class="max">A clean run to a single letter with no undos is 11 points.</p>
   <form method="dialog"><button class="primary">Got it</button></form>
 </dialog>
 

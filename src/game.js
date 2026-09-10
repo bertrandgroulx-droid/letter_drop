@@ -5,6 +5,9 @@ const SINGLE_LETTER_WORDS = ["a", "i"];
 
 export const POINTS_PER_WORD = 2;
 export const POINTS_PER_NEW_LETTER = 1;
+export const UNDO_COST = 1;
+
+const NOTHING_USED = new Set();
 
 /** Three rounds that can bring in a letter, then the last letter falling. */
 export const PERFECT_SCORE =
@@ -22,8 +25,11 @@ export function blocks(word, size) {
   return out;
 }
 
-/** Every word reachable from `word` in one round. */
-export function nextWords(word, dictionary = DICTIONARY) {
+/**
+ * Every word reachable from `word` in one round. Letters in `used` are off
+ * limits, because a letter may only be added to the board once.
+ */
+export function nextWords(word, dictionary = DICTIONARY, used = NOTHING_USED) {
   if (word.length <= 1) return [];
   if (word.length === 2) return SINGLE_LETTER_WORDS.filter((c) => word.includes(c));
 
@@ -32,6 +38,7 @@ export function nextWords(word, dictionary = DICTIONARY) {
   for (const [start, end] of blocks(word, keepCount(word.length))) {
     const block = word.slice(start, end);
     for (const letter of ALPHABET) {
+      if (used.has(letter)) continue;
       if (target.has(letter + block)) found.add(letter + block);
       if (target.has(block + letter)) found.add(block + letter);
     }
@@ -58,6 +65,7 @@ export class Game {
     this.side = "end";
     this.letter = "";
     this.phase = "select";
+    this.undos = 0;
     this.refreshPhase();
   }
 
@@ -80,6 +88,15 @@ export class Game {
   /** Words the player made. The opener was dealt, not earned, so it does not count. */
   get wordsMade() {
     return this.rows.length - 1;
+  }
+
+  /** Every letter on the board, so every letter that can no longer be added. */
+  get usedLetters() {
+    const used = new Set(this.seed);
+    for (const row of this.rows.slice(1)) {
+      for (const c of row.word) used.add(c);
+    }
+    return used;
   }
 
   /** Letters the player brought in that were not in the opening word. */
@@ -106,30 +123,27 @@ export class Game {
         word: row.word,
         newLetter: fresh[0] ?? null,
         points: POINTS_PER_WORD + fresh.length * POINTS_PER_NEW_LETTER,
-        max: POINTS_PER_WORD + (row.added ? POINTS_PER_NEW_LETTER : 0),
       };
     });
   }
 
   get score() {
-    return {
-      words: this.wordsMade * POINTS_PER_WORD,
-      letters: this.newLetters.length * POINTS_PER_NEW_LETTER,
-      get total() {
-        return this.words + this.letters;
-      },
-    };
+    const words = this.wordsMade * POINTS_PER_WORD;
+    const letters = this.newLetters.length * POINTS_PER_NEW_LETTER;
+    const penalty = this.undos * UNDO_COST;
+    return { words, letters, penalty, total: Math.max(0, words + letters - penalty) };
   }
 
   /** Decide what the player can do from the word now on the board. */
   refreshPhase() {
     const word = this.currentWord;
+    const open = nextWords(word, this.dictionary, this.usedLetters).length > 0;
     if (word.length === 1) {
       this.phase = "won";
     } else if (word.length === 2) {
-      this.phase = nextWords(word, this.dictionary).length ? "final" : "done";
+      this.phase = open ? "final" : "done";
     } else {
-      this.phase = nextWords(word, this.dictionary).length ? "select" : "stuck";
+      this.phase = open ? "select" : "stuck";
     }
     return this.phase;
   }
@@ -176,10 +190,22 @@ export class Game {
     return true;
   }
 
+  /** Refuses a letter that is already on the board. */
   setLetter(letter) {
-    if (this.phase !== "build") return false;
-    this.letter = /^[a-z]$/i.test(letter) ? letter.toLowerCase() : "";
-    return true;
+    if (this.phase !== "build") return { ok: false };
+    if (!/^[a-z]$/i.test(letter)) {
+      this.letter = "";
+      return { ok: true };
+    }
+    const c = letter.toLowerCase();
+    if (this.usedLetters.has(c)) {
+      return {
+        ok: false,
+        reason: `${c.toUpperCase()} is already on the board. Add a letter you have not used.`,
+      };
+    }
+    this.letter = c;
+    return { ok: true };
   }
 
   get draftWord() {
@@ -191,6 +217,9 @@ export class Game {
   submit() {
     if (this.phase !== "build") return { ok: false, reason: "not building" };
     if (!this.letter) return { ok: false, reason: "Add a letter first." };
+    if (this.usedLetters.has(this.letter)) {
+      return { ok: false, reason: `${this.letter.toUpperCase()} is already on the board.` };
+    }
     const word = this.draftWord;
     if (!this.dictionary[word.length].has(word)) {
       return { ok: false, reason: `${word.toUpperCase()} is not in the word list.` };
@@ -236,6 +265,7 @@ export class Game {
       return true;
     }
     if (this.rows.length < 2) return false;
+    this.undos += 1;
     this.rows.pop();
     // The last letter fell on its own, so step back past it to a real choice.
     if (this.currentWord.length === 2 && this.rows.length > 1) this.rows.pop();

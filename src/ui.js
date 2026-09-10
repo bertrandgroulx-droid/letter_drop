@@ -1,4 +1,4 @@
-import { Game, PERFECT_SCORE } from "./game.js";
+import { Game, PERFECT_SCORE, UNDO_COST } from "./game.js";
 import { DICTIONARY } from "./words.js";
 
 const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
@@ -129,12 +129,17 @@ function renderResult() {
   const heading = game.phase === "won"
     ? "Cleared it."
     : game.phase === "done" ? "End of the line." : "Stuck.";
+  const { penalty } = game.score;
   const newLetters = game.newLetters.map((c) => c.toUpperCase()).join(" ") || "none";
+  const undoRow = penalty
+    ? `<dt>${game.undos} undo${game.undos === 1 ? "" : "s"}</dt><dd>\u2212${penalty}</dd>`
+    : "";
   box.innerHTML = `
     <h2>${heading}</h2>
     <dl>
       <dt>${game.wordsMade} word${game.wordsMade === 1 ? "" : "s"} made</dt><dd>${words}</dd>
       <dt>New letters: ${newLetters}</dt><dd>${letters}</dd>
+      ${undoRow}
       <dt class="total">Total</dt><dd class="total">${total}</dd>
     </dl>`;
   const share = document.createElement("button");
@@ -165,11 +170,11 @@ function shareText() {
     const added = row.added
       ? (row.added.side === "front" ? 0 : row.word.length - 1)
       : -1;
-    const squares = [...row.word]
+    return [...row.word]
       .map((_, i) => (i === added ? (entry.newLetter ? "\u{1F7E9}" : "\u2B1C") : "\u{1F7E7}"))
       .join("");
-    return `${squares} ${entry.points}`;
   });
+  if (game.undos) rows.push(`${game.undos} undo${game.undos === 1 ? "" : "s"}`);
 
   const link = `${location.origin}${location.pathname}?word=${game.seed}`;
   return [
@@ -222,8 +227,8 @@ function defaultNote() {
     }
     case "build": {
       const where = game.side === "front" ? "in front of" : "behind";
-      return `Add a letter <b>${where}</b> ${game.block.toUpperCase()} ` +
-        `to make a ${game.block.length + 1}-letter word. Arrow keys switch ends.`;
+      return `Add an <b>unused</b> letter ${where} ${game.block.toUpperCase()} ` +
+        `to make a ${game.block.length + 1}-letter word.`;
     }
     case "stuck":
       return `No word can be made from <b>${word}</b>. Undo and try another split.`;
@@ -241,26 +246,24 @@ function tallyText() {
 }
 
 function renderBreakdown() {
-  els.breakdown.replaceChildren(...game.breakdown.map((entry) => {
+  const lines = game.breakdown.map((entry) => [entry.word, `+${entry.points}`, false]);
+  if (game.undos) {
+    const label = game.undos === 1 ? "1 undo" : `${game.undos} undos`;
+    lines.push([label, `\u2212${game.score.penalty}`, true]);
+  }
+
+  els.breakdown.replaceChildren(...lines.map(([label, value, penalty]) => {
     const item = document.createElement("li");
 
-    const word = document.createElement("span");
-    word.className = "bd-word";
-    word.textContent = entry.word;
-
-    const pips = document.createElement("span");
-    pips.className = "bd-pips";
-    for (let i = 0; i < entry.max; i += 1) {
-      const pip = document.createElement("i");
-      pip.className = i < entry.points ? "pip filled" : "pip";
-      pips.append(pip);
-    }
+    const name = document.createElement("span");
+    name.className = "bd-word";
+    name.textContent = label;
 
     const count = document.createElement("span");
-    count.className = "bd-count";
-    count.textContent = `${entry.points} of ${entry.max}`;
+    count.className = penalty ? "bd-count penalty" : "bd-count";
+    count.textContent = value;
 
-    item.append(word, pips, count);
+    item.append(name, count);
     return item;
   }));
 }
@@ -277,7 +280,9 @@ function render() {
   els.score.textContent = game.score.total;
   els.tallyDetail.textContent = tallyText();
   renderBreakdown();
-  els.undo.disabled = game.rows.length < 2 && !game.selection.length && game.phase !== "build";
+  const undoCosts = game.rows.length > 1 && !game.selection.length && game.phase !== "build";
+  els.undo.disabled = !undoCosts && !game.selection.length && game.phase !== "build";
+  els.undo.textContent = undoCosts ? `Undo \u2212${UNDO_COST}` : "Undo";
   renderKeyboard();
 }
 
@@ -298,7 +303,10 @@ function renderKeyboard() {
       key.type = "button";
       key.className = "key";
       key.textContent = letter;
-      if (used.has(letter)) key.classList.add("used");
+      if (used.has(letter)) {
+        key.classList.add("used");
+        key.disabled = true;  // a letter already on the board cannot be added again
+      }
       key.addEventListener("click", () => typeLetter(letter));
       row.append(key);
     }
@@ -336,8 +344,8 @@ function typeLetter(letter) {
     setNote(game.phase === "select" ? "Choose your letters first." : "", game.phase === "select");
     return render();
   }
-  game.setLetter(letter);
-  setNote("");
+  const result = game.setLetter(letter);
+  setNote(result.ok ? "" : result.reason, !result.ok);
   render();
 }
 

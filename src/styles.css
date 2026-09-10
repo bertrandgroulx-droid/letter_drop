@@ -131,7 +131,7 @@ h1 {
   margin: 0;
   padding: 0.55rem 0 0;
   display: grid;
-  grid-template-columns: auto auto auto;
+  grid-template-columns: auto auto;
   justify-content: start;
   align-items: center;
   gap: 0.3rem 0.7rem;
@@ -159,6 +159,7 @@ h1 {
 .pip.filled { background: var(--new); }
 
 .bd-count { color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.bd-count.penalty { color: var(--bad); }
 
 button {
   font: inherit;
@@ -330,7 +331,7 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 }
 
 .key.wide { min-width: clamp(3.2rem, 14vw, 4.5rem); }
-.key.used { background: var(--line); color: var(--ink-dim); border-color: var(--line); }
+.key.used { background: var(--line); color: var(--ink-dim); border-color: var(--line); opacity: 1; }
 
 
 /* ---------- rules ---------- */
