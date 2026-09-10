@@ -10,7 +10,6 @@ const els = {
   undo: document.getElementById("undo"),
   tallyDetail: document.getElementById("tally-detail"),
   breakdown: document.getElementById("breakdown"),
-  definition: document.getElementById("definition"),
   result: document.getElementById("result"),
   hints: document.getElementById("hints"),
   tallyLabel: document.getElementById("tally-label"),
@@ -130,6 +129,9 @@ function renderRow(row, rowIndex, offset) {
     div.append(tile);
   });
   div.append(rowLookup(row.word));
+  if (definitionFor === row.word && definitionIn === "board") {
+    div.append(renderDefinition());
+  }
   return div;
 }
 
@@ -213,8 +215,8 @@ function renderResult() {
   const actions = document.createElement("div");
   actions.className = "result-actions";
 
+  again.className = "primary";
   if (game.hintsUsed) {
-    again.className = "primary";
     const note = document.createElement("p");
     note.className = "practice";
     note.textContent = "Hints were on, so this one is practice and cannot be shared.";
@@ -222,11 +224,10 @@ function renderResult() {
     actions.append(again);
   } else {
     const share = document.createElement("button");
-    share.className = "primary";
+    share.className = "quiet";
     share.textContent = "Share";
     share.addEventListener("click", () => shareResult(share, box));
-    again.className = "ghost";
-    actions.append(share, again);
+    actions.append(again, share);
   }
 
   box.append(actions);
@@ -374,6 +375,13 @@ function lookupButton(word, where) {
 }
 
 function showDefinition(word, where) {
+  // Tapping the open one again puts it away, since it sits over the rows below.
+  if (definitionFor === word && definitionIn === where) {
+    definitionFor = null;
+    definitionIn = null;
+    render();
+    return;
+  }
   definitionFor = word;
   definitionIn = where;
   render();
@@ -540,6 +548,15 @@ function defaultNote() {
   }
 }
 
+/** Rows sit at different offsets, so a panel hung off one can overshoot. */
+function keepDefinitionOnScreen() {
+  const panel = els.board.querySelector(".row .definition");
+  if (!panel) return;
+  panel.style.marginLeft = "0px";
+  const overshoot = panel.getBoundingClientRect().right - (window.innerWidth - 12);
+  if (overshoot > 0) panel.style.marginLeft = `${-Math.ceil(overshoot)}px`;
+}
+
 function tallyText() {
   const words = game.wordsMade;
   if (!words) return game.hintsUsed ? "practice run" : "no words yet";
@@ -590,9 +607,6 @@ function render() {
   els.tallyLabel.textContent = `points of ${game.bestPossible}`;
   els.tallyDetail.textContent = tallyText();
   renderBreakdown();
-  els.definition.replaceChildren(
-    ...(definitionFor && definitionIn === "board" ? [renderDefinition()] : [])
-  );
   const undoCosts = game.canUndo &&
     game.rows.length > 1 && !game.selection.length && game.phase !== "build";
   els.undo.disabled = !game.canUndo;
@@ -607,6 +621,7 @@ function render() {
   els.giveUp.textContent = giveUpArmed ? "Sure? Show the answer" : "Give up";
   els.giveUp.classList.toggle("armed", giveUpArmed);
   els.undo.title = game.canUndo ? "" : "This game is closed.";
+  keepDefinitionOnScreen();
   els.hints.textContent = hintsOn ? "Hints on" : hintsArmed ? "Turn on?" : "Hints";
   els.hints.classList.toggle("on", hintsOn);
   els.hints.classList.toggle("armed", hintsArmed);

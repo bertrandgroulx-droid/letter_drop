@@ -195,6 +195,8 @@ button {
 button:hover:not(:disabled) { border-color: var(--ink-dim); }
 button:disabled { opacity: 0.4; cursor: default; }
 button.primary { background: var(--new); border-color: var(--new); color: #fff; font-weight: 600; }
+button.quiet { background: var(--surface); border-color: var(--line); color: var(--ink-dim); }
+button.quiet:hover { color: var(--ink); }
 .ghost { font-size: 0.85rem; }
 .ghost.on { background: var(--new); border-color: var(--new); color: #fff; }
 .ghost.on:hover { border-color: var(--new); }
@@ -466,6 +468,21 @@ button.lookup:hover .book { opacity: 1; }
   background: var(--bg);
   font-size: 0.82rem;
   line-height: 1.45;
+}
+
+/* Hung under the word it describes, over the rows below rather than among
+   them, so the ladder keeps its shape and its tile size. */
+.row .definition {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  left: 0;
+  z-index: 5;
+  margin: 0;
+  width: max-content;
+  max-width: min(23rem, calc(100vw - 2rem));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 22px rgb(0 0 0 / 0.16);
 }
 
 .definition a { color: var(--new); }

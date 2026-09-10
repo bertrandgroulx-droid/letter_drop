@@ -74,8 +74,10 @@ through to see it early, keeping whatever you have scored so far. Looking
 closes the game either way, so undo cannot walk you back into it with the
 answer in hand. Ties are common, so it is a perfect
 run rather than the perfect run. Every word on the board carries a small book at the end of its row, in the slot
-the green check vacates once the word is accepted, and tapping it shows the
-word's first sense underneath the board. A Scrabble dictionary accepts plenty
+the green check vacates once the word is accepted, and tapping it hangs the word's
+first sense directly under that row, over the rows below rather than among
+them, so the ladder keeps both its shape and its tile size. Tapping the same
+book again puts it away. A Scrabble dictionary accepts plenty
 nobody recognises, and the moment you want to know is while you are still
 playing. The same works for the words in a revealed perfect run. Definitions come from Wiktionary's REST endpoint, which is the
 only network call the game makes. A word is fetched as soon as you make it, so
