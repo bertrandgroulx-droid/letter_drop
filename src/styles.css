@@ -210,10 +210,9 @@ main {
   padding-block-start: clamp(0.5rem, 5vh, 2.5rem);
 }
 
-.board { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+.board { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
 
 .row { display: flex; gap: 0.4rem; align-items: center; }
-.row.past { opacity: 0.5; }
 
 .tile {
   position: relative;
@@ -250,8 +249,31 @@ main {
 }
 
 button.tile:hover:not(:disabled) { border-color: var(--keep); }
-.tile.selected, .tile.kept { background: var(--keep); border-color: var(--keep); color: var(--keep-ink); }
-.tile.added { border-color: var(--new); color: var(--new); }
+
+/* Choosing: amber, because you are picking these out. */
+.tile.selected { background: var(--keep); border-color: var(--keep); color: var(--keep-ink); }
+
+/* Chosen and gone: these letters are in the row below now. */
+.tile.dropped {
+  background: var(--line);
+  border-color: var(--line);
+  color: var(--ink-dim);
+}
+
+.tile.dropped::before {
+  content: "\2193";
+  position: absolute;
+  left: 50%;
+  bottom: -0.88rem;
+  transform: translateX(-50%);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink-dim);
+}
+
+/* Left behind, and out of the game. */
+.tile.spent { opacity: 0.3; }
 .tile.droppable { border-color: var(--new); border-style: dashed; color: var(--new); }
 
 .slot {

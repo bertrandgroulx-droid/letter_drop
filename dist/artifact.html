@@ -215,10 +215,9 @@ main {
   padding-block-start: clamp(0.5rem, 5vh, 2.5rem);
 }
 
-.board { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+.board { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
 
 .row { display: flex; gap: 0.4rem; align-items: center; }
-.row.past { opacity: 0.5; }
 
 .tile {
   position: relative;
@@ -255,8 +254,31 @@ main {
 }
 
 button.tile:hover:not(:disabled) { border-color: var(--keep); }
-.tile.selected, .tile.kept { background: var(--keep); border-color: var(--keep); color: var(--keep-ink); }
-.tile.added { border-color: var(--new); color: var(--new); }
+
+/* Choosing: amber, because you are picking these out. */
+.tile.selected { background: var(--keep); border-color: var(--keep); color: var(--keep-ink); }
+
+/* Chosen and gone: these letters are in the row below now. */
+.tile.dropped {
+  background: var(--line);
+  border-color: var(--line);
+  color: var(--ink-dim);
+}
+
+.tile.dropped::before {
+  content: "\2193";
+  position: absolute;
+  left: 50%;
+  bottom: -0.88rem;
+  transform: translateX(-50%);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink-dim);
+}
+
+/* Left behind, and out of the game. */
+.tile.spent { opacity: 0.3; }
 .tile.droppable { border-color: var(--new); border-style: dashed; color: var(--new); }
 
 .slot {
@@ -505,7 +527,9 @@ dialog form { text-align: right; }
      letters down into the next word and add one more, making a word one letter
      shorter, until you are down to a single letter.</p>
   <p class="tip"><b>Dropping is not discarding.</b> The letters you drop are
-     the letters you take with you. Everything you leave behind is gone.</p>
+     the letters you take with you. Everything you leave behind is gone. The
+     board shows it: letters that dropped turn grey with an arrow under them,
+     and the ones left behind fade away.</p>
   <ol class="rounds">
     <li><b>5 &rarr; 4</b> Drop <b>three</b> letters in a row, then add one.</li>
     <li><b>4 &rarr; 3</b> Drop <b>two</b> letters in a row, then add one.</li>
@@ -1020,10 +1044,18 @@ function addedIndex(row) {
   return row.added.side === "front" ? 0 : row.word.length - 1;
 }
 
+/**
+ * Once a row has given up its letters it says so: the ones that went down are
+ * greyed and arrowed, and the ones left behind fade, because they are out of
+ * the game. The letter added to a row needs no marking of its own, since every
+ * added letter is a new one.
+ */
 function tileClasses(row, index, isCurrent) {
   const classes = ["tile"];
-  if (row.kept && index >= row.kept[0] && index < row.kept[1]) classes.push("kept");
-  if (index === addedIndex(row)) classes.push("added");
+  if (row.kept) {
+    const wentDown = index >= row.kept[0] && index < row.kept[1];
+    classes.push(wentDown ? "dropped" : "spent");
+  }
   if (isCurrent && game.phase === "select" && game.selection.includes(index)) {
     classes.push("selected");
   }
@@ -1033,7 +1065,7 @@ function tileClasses(row, index, isCurrent) {
 function renderRow(row, rowIndex) {
   const isCurrent = rowIndex === game.rows.length - 1;
   const div = document.createElement("div");
-  div.className = isCurrent && !game.isOver && game.phase !== "build" ? "row" : "row past";
+  div.className = "row";
   if (rowIndex >= landingFrom) div.classList.add("landing");
 
   [...row.word].forEach((letter, index) => {
@@ -1081,7 +1113,7 @@ function renderDraft() {
   div.append(renderSlot("front"));
   for (const letter of game.block) {
     const tile = document.createElement("div");
-    tile.className = "tile kept";
+    tile.className = "tile";
     tile.textContent = letter;
     div.append(tile);
   }

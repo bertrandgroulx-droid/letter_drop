@@ -30,6 +30,12 @@ A sample run from PLANT: drop LAN, add D for LAND. Drop LA, add B for LAB.
 Drop A, add H for AH. The A then falls on its own and the game is over. That run
 spends D, B, and H, and scores the full 11.
 
+The board shows where every letter went. While you are choosing, your
+selection is amber. Once it has dropped, those tiles turn grey with an arrow
+beneath them, and the letters left behind fade out, because they are out of the
+game. The letter you add carries no marking of its own beyond its value, since
+every added letter is a new one and marking it would say nothing.
+
 ## The one thing to plan for
 
 Nothing falls unless the two-letter word holds an A or an I, and those obey the

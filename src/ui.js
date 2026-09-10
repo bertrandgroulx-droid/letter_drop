@@ -55,10 +55,18 @@ function addedIndex(row) {
   return row.added.side === "front" ? 0 : row.word.length - 1;
 }
 
+/**
+ * Once a row has given up its letters it says so: the ones that went down are
+ * greyed and arrowed, and the ones left behind fade, because they are out of
+ * the game. The letter added to a row needs no marking of its own, since every
+ * added letter is a new one.
+ */
 function tileClasses(row, index, isCurrent) {
   const classes = ["tile"];
-  if (row.kept && index >= row.kept[0] && index < row.kept[1]) classes.push("kept");
-  if (index === addedIndex(row)) classes.push("added");
+  if (row.kept) {
+    const wentDown = index >= row.kept[0] && index < row.kept[1];
+    classes.push(wentDown ? "dropped" : "spent");
+  }
   if (isCurrent && game.phase === "select" && game.selection.includes(index)) {
     classes.push("selected");
   }
@@ -68,7 +76,7 @@ function tileClasses(row, index, isCurrent) {
 function renderRow(row, rowIndex) {
   const isCurrent = rowIndex === game.rows.length - 1;
   const div = document.createElement("div");
-  div.className = isCurrent && !game.isOver && game.phase !== "build" ? "row" : "row past";
+  div.className = "row";
   if (rowIndex >= landingFrom) div.classList.add("landing");
 
   [...row.word].forEach((letter, index) => {
@@ -116,7 +124,7 @@ function renderDraft() {
   div.append(renderSlot("front"));
   for (const letter of game.block) {
     const tile = document.createElement("div");
-    tile.className = "tile kept";
+    tile.className = "tile";
     tile.textContent = letter;
     div.append(tile);
   }
