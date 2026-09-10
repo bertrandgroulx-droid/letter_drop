@@ -15,16 +15,24 @@
 <header class="bar">
   <h1>Letter&nbsp;Drop</h1>
   <div class="bar-right">
-    <output class="score" id="score" aria-live="polite">0</output>
     <button type="button" id="how-to" class="ghost">How to play</button>
     <button type="button" id="new-game" class="ghost">New game</button>
   </div>
 </header>
 
+<div class="tally">
+  <output class="tally-score" id="score" aria-live="polite">0</output>
+  <div class="tally-lines">
+    <span class="tally-label">points</span>
+    <span class="tally-detail" id="tally-detail">no words yet</span>
+  </div>
+</div>
+
 <main>
   <div class="board" id="board" aria-label="Word chain"></div>
   <p class="message" id="message" role="status" aria-live="polite"></p>
   <div class="controls">
+    <button type="button" id="commit" class="primary" hidden>Make the word</button>
     <button type="button" id="undo" class="ghost">Undo</button>
     <label class="toggle"><input type="checkbox" id="hints"> Grey out dead letters</label>
   </div>

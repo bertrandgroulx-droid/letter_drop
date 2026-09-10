@@ -8,6 +8,8 @@ const els = {
   score: document.getElementById("score"),
   keyboard: document.getElementById("keyboard"),
   undo: document.getElementById("undo"),
+  commit: document.getElementById("commit"),
+  tallyDetail: document.getElementById("tally-detail"),
   hints: document.getElementById("hints"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
@@ -21,7 +23,7 @@ function requestedSeed() {
 }
 
 let game = new Game({ seed: requestedSeed() });
-let landingRow = 0;
+let landingFrom = 0;
 let note = "";
 let noteIsError = false;
 
@@ -48,9 +50,6 @@ function tileClasses(row, index, isCurrent) {
   if (isCurrent && game.phase === "select" && game.selection.includes(index)) {
     classes.push("selected");
   }
-  if (isCurrent && game.phase === "final" && "ai".includes(row.word[index])) {
-    classes.push("droppable");
-  }
   return classes.join(" ");
 }
 
@@ -58,28 +57,19 @@ function renderRow(row, rowIndex) {
   const isCurrent = rowIndex === game.rows.length - 1;
   const div = document.createElement("div");
   div.className = isCurrent && !game.isOver && game.phase !== "build" ? "row" : "row past";
-  if (rowIndex === landingRow) div.classList.add("landing");
+  if (rowIndex >= landingFrom) div.classList.add("landing");
 
   [...row.word].forEach((letter, index) => {
-    const interactive = isCurrent &&
-      ((game.phase === "select" && game.canSelect(index)) ||
-        (game.phase === "final" && "ai".includes(letter)));
+    const interactive = isCurrent && game.phase === "select" && game.canSelect(index);
     const tile = document.createElement(interactive ? "button" : "div");
     tile.className = tileClasses(row, index, isCurrent);
     tile.textContent = letter;
     if (interactive) {
       tile.type = "button";
       tile.addEventListener("click", () => {
-        if (game.phase === "select") {
-          game.toggleSelect(index);
-          if (game.phase === "build") landingRow = game.rows.length;
-          setNote("");
-        } else {
-          const result = game.dropFinal(index);
-          if (!result.ok) return setNote(result.reason, true), render();
-          landingRow = game.rows.length - 1;
-          setNote("");
-        }
+        game.toggleSelect(index);
+        if (game.phase === "build") landingFrom = game.rows.length;
+        setNote("");
         render();
       });
     }
@@ -108,7 +98,7 @@ function renderSlot(side) {
 
 function renderDraft() {
   const div = document.createElement("div");
-  div.className = landingRow === game.rows.length ? "row draft landing" : "row draft";
+  div.className = landingFrom === game.rows.length ? "row draft landing" : "row draft";
   div.append(renderSlot("front"));
   for (const letter of game.block) {
     const tile = document.createElement("div");
@@ -157,13 +147,19 @@ function defaultNote() {
       return `Add a letter <b>${where}</b> ${game.block.toUpperCase()} ` +
         `to make a ${game.block.length + 1}-letter word. Arrow keys switch ends.`;
     }
-    case "final":
-      return `<b>${word}</b> holds a one-letter word. Tap it to let it fall.`;
     case "stuck":
       return `No word can be made from <b>${word}</b>. Undo and try another split.`;
     default:
       return "";
   }
+}
+
+function tallyText() {
+  const words = game.wordsMade;
+  if (!words) return "no words yet";
+  const fresh = game.newLetters.length;
+  const plural = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+  return plural(words, "word") + (fresh ? ` \u00b7 ${plural(fresh, "new letter")}` : "");
 }
 
 function render() {
@@ -172,10 +168,16 @@ function render() {
     ...(game.phase === "build" ? [renderDraft()] : []),
     ...(game.isOver ? [renderResult()] : [])
   );
-  landingRow = -1;
+  landingFrom = Infinity;
   els.message.innerHTML = note || defaultNote();
   els.message.classList.toggle("error", noteIsError);
   els.score.textContent = game.score.total;
+  els.tallyDetail.textContent = tallyText();
+  els.commit.hidden = game.phase !== "build";
+  els.commit.disabled = !game.letter;
+  els.commit.textContent = game.letter
+    ? `Make ${game.draftWord.toUpperCase()}`
+    : "Make the word";
   els.undo.disabled = game.rows.length < 2 && !game.selection.length && game.phase !== "build";
   renderKeyboard();
 }
@@ -244,15 +246,6 @@ function typeLetter(letter) {
 }
 
 function onEnter() {
-  if (game.phase === "final") {
-    const index = [...game.currentWord].findIndex((c) => "ai".includes(c));
-    if (index >= 0) {
-      game.dropFinal(index);
-      landingRow = game.rows.length - 1;
-      setNote("");
-      return render();
-    }
-  }
   if (game.phase !== "build") return;
 
   const before = game.score.total;
@@ -262,9 +255,12 @@ function onEnter() {
     render();
     return shakeDraft();
   }
-  landingRow = game.rows.length - 1;
+  landingFrom = game.rows.length - (result.fell ? 2 : 1);
   const gained = game.score.total - before;
-  setNote(`<b>${result.word.toUpperCase()}</b> &middot; +${gained}`);
+  const made = `<b>${result.word.toUpperCase()}</b>`;
+  setNote(result.fell
+    ? `${made}, then the ${result.fell.toUpperCase()} fell on its own &middot; +${gained}`
+    : `${made} &middot; +${gained}`);
   render();
 }
 
@@ -283,13 +279,14 @@ function startNewGame() {
     history.replaceState(null, "", location.pathname);
   } catch { /* sandboxed frames refuse history writes */ }
   game = new Game();
-  landingRow = 0;
+  landingFrom = 0;
   setNote("");
   render();
 }
 
 /* ---------- wiring ---------- */
 
+els.commit.addEventListener("click", onEnter);
 els.undo.addEventListener("click", onBackspace);
 els.newGame.addEventListener("click", startNewGame);
 els.hints.addEventListener("change", () => {

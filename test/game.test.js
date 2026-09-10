@@ -75,21 +75,59 @@ test("a full run scores two a word plus one for each new letter", () => {
   game.setLetter("a");
   assert.ok(game.submit().ok, "AD");
 
-  assert.equal(game.phase, "final");
-  assert.ok(game.dropFinal(0).ok, "A");
-  assert.equal(game.phase, "won");
+  assert.equal(game.phase, "won", "the A falls without being asked");
 
   assert.deepEqual(game.rows.map((r) => r.word), ["plant", "land", "lad", "ad", "a"]);
   assert.deepEqual(game.newLetters, ["d"]);
   assert.deepEqual({ ...game.score, total: game.score.total }, { words: 8, letters: 1, total: 9 });
 });
 
-test("only A and I may fall on their own", () => {
+test("the last letter falls on its own", () => {
+  const game = new Game({ seed: "plant" });
+  [1, 2, 3].forEach((i) => game.toggleSelect(i));
+  game.setLetter("d");
+  game.submit();
+  [0, 1].forEach((i) => game.toggleSelect(i));
+  game.setLetter("d");
+  game.submit();
+
+  game.toggleSelect(2);
+  game.setSide("front");
+  game.setLetter("a");
+  const result = game.submit();
+
+  assert.equal(result.word, "ad");
+  assert.equal(result.fell, "a", "AD reports the letter that fell");
+  assert.equal(game.currentWord, "a");
+  assert.equal(game.phase, "won");
+  assert.equal(game.score.words, 8, "the fall still scores as a word");
+});
+
+test("a two-letter word without an A or I is the end of the road", () => {
   const game = new Game({ seed: "plant" });
   game.rows.push({ word: "go", added: null, kept: null });
   game.refreshPhase();
-  assert.equal(game.phase, "done", "GO cannot fall any further");
-  assert.equal(game.dropFinal(0).ok, false);
+  assert.equal(game.phase, "done");
+  assert.equal(game.fallThrough(), null, "nothing falls from GO");
+});
+
+test("undo steps back past the letter that fell on its own", () => {
+  const game = new Game({ seed: "plant" });
+  [1, 2, 3].forEach((i) => game.toggleSelect(i));
+  game.setLetter("d");
+  game.submit();
+  [0, 1].forEach((i) => game.toggleSelect(i));
+  game.setLetter("d");
+  game.submit();
+  game.toggleSelect(2);
+  game.setSide("front");
+  game.setLetter("a");
+  game.submit();
+
+  assert.equal(game.phase, "won");
+  game.undo();
+  assert.equal(game.currentWord, "lad", "back to the last real choice, not to AD");
+  assert.equal(game.phase, "select");
 });
 
 test("undo walks back one word at a time", () => {

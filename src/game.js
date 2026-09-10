@@ -190,20 +190,21 @@ export class Game {
     this.block = null;
     this.letter = "";
     this.refreshPhase();
-    return { ok: true, word };
+    return { ok: true, word, fell: this.fallThrough() };
   }
 
-  /** The last move: let the A or I in a 2-letter word fall on its own. */
-  dropFinal(index) {
-    if (this.phase !== "final") return { ok: false, reason: "not the last round" };
+  /**
+   * The last round is not a decision. If the two-letter word holds an A or an
+   * I, there is only ever one thing to do, so it falls on its own.
+   */
+  fallThrough() {
+    if (this.phase !== "final") return null;
+    const index = [...this.currentWord].findIndex((c) => SINGLE_LETTER_WORDS.includes(c));
     const letter = this.currentWord[index];
-    if (!SINGLE_LETTER_WORDS.includes(letter)) {
-      return { ok: false, reason: "Only A and I are words on their own." };
-    }
     this.currentRow.kept = [index, index + 1];
     this.rows.push({ word: letter, added: null, kept: null });
     this.refreshPhase();
-    return { ok: true, word: letter };
+    return letter;
   }
 
   /** Step back one word, or clear a half-finished selection. */
@@ -222,6 +223,8 @@ export class Game {
     }
     if (this.rows.length < 2) return false;
     this.rows.pop();
+    // The last letter fell on its own, so step back past it to a real choice.
+    if (this.currentWord.length === 2 && this.rows.length > 1) this.rows.pop();
     this.currentRow.kept = null;
     this.selection = [];
     this.block = null;

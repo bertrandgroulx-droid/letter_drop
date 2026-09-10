@@ -14,13 +14,14 @@ in order, so the new letter always lands on an end, never in the middle.
 | 1 | 3 consecutive letters | 1 | a 4-letter word |
 | 2 | 2 consecutive letters | 1 | a 3-letter word |
 | 3 | 1 letter | 1 | a 2-letter word |
-| 4 | the A or the I | — | a 1-letter word |
+| 4 | the A or the I | — | a 1-letter word, automatically |
 
 The last round only works if the two-letter word holds an A or an I, since those
-are the only single letters that are words on their own.
+are the only single letters that are words on their own. It is not a decision,
+so the game takes it for you.
 
 A sample run from PLANT: keep LAN, add D for LAND. Keep LA, add D for LAD. Keep
-D, add A for AD. Then let the A fall.
+D, add A for AD. The A then falls on its own and the game is over.
 
 ## Scoring
 

@@ -97,16 +97,34 @@ h1 {
 
 .bar-right { display: flex; align-items: center; gap: 0.5rem; }
 
-.score {
-  min-width: 2.6rem;
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  background: var(--new);
-  color: #fff;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
+/* ---------- running score ---------- */
+
+.tally {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-top: 0.7rem;
 }
+
+.tally-score {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2.1rem;
+  line-height: 1;
+  color: var(--new);
+  font-variant-numeric: tabular-nums;
+}
+
+.tally-lines { display: flex; flex-direction: column; gap: 0.1rem; }
+
+.tally-label {
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.tally-detail { font-size: 0.82rem; color: var(--ink-dim); }
 
 button {
   font: inherit;
@@ -188,7 +206,8 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 .message.error { color: var(--bad); }
 .message b { color: var(--ink); }
 
-.controls { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+.controls { display: flex; align-items: center; gap: 0.6rem 1rem; flex-wrap: wrap; justify-content: center; }
+#commit { padding: 0.5rem 1.1rem; font-family: var(--font-display); font-weight: 600; }
 .toggle { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--ink-dim); }
 
 /* ---------- result ---------- */
