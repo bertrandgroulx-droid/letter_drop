@@ -119,6 +119,7 @@ export class Game {
     this.phase = "select";
     this.undos = 0;
     this.hintsUsed = false;
+    this.answerShown = false;
     this.best = null;
     this.refreshPhase();
   }
@@ -329,6 +330,9 @@ export class Game {
 
   /** Step back one word, or clear a half-finished selection. */
   undo() {
+    // Once a perfect run has been revealed there is no unseeing it, so this
+    // game is closed rather than replayable with the answer in hand.
+    if (this.answerShown) return false;
     if (this.phase === "build") {
       this.currentRow.kept = null;
       this.selection = [];

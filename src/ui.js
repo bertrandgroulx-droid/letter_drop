@@ -26,7 +26,6 @@ function requestedSeed() {
 let game = new Game({ seed: requestedSeed() });
 let landingFrom = 0;
 let hintsOn = false;
-let bestRunShown = false;
 let definitionFor = null;
 
 // Free, no key, no sign-up. Blocked outright in some embeddings, which is what
@@ -183,17 +182,21 @@ function renderResult() {
   box.append(actions);
 
   // Only offered once the game is over, where it can teach without helping.
-  if (bestRunShown) {
+  if (game.answerShown) {
     box.append(renderBestRun());
   } else {
     const reveal = document.createElement("button");
     reveal.className = "ghost reveal";
     reveal.textContent = "Show a perfect run";
     reveal.addEventListener("click", () => {
-      bestRunShown = true;
+      game.answerShown = true;
       render();
     });
-    box.append(reveal);
+
+    const warning = document.createElement("p");
+    warning.className = "best-run-note";
+    warning.textContent = "Looking closes this game. Undo stops working.";
+    box.append(reveal, warning);
   }
   return box;
 }
@@ -431,9 +434,16 @@ function render() {
   els.tallyLabel.textContent = `points of ${game.bestPossible}`;
   els.tallyDetail.textContent = tallyText();
   renderBreakdown();
-  const undoCosts = game.rows.length > 1 && !game.selection.length && game.phase !== "build";
-  els.undo.disabled = !undoCosts && !game.selection.length && game.phase !== "build";
+  const somethingToUndo =
+    game.rows.length > 1 || game.selection.length > 0 || game.phase === "build";
+  const canUndo = somethingToUndo && !game.answerShown;
+  const undoCosts =
+    canUndo && game.rows.length > 1 && !game.selection.length && game.phase !== "build";
+  els.undo.disabled = !canUndo;
   els.undo.textContent = undoCosts ? `Undo \u2212${UNDO_COST}` : "Undo";
+  els.undo.title = game.answerShown
+    ? "You have seen a perfect run, so this game is closed."
+    : "";
   els.hints.textContent = hintsOn ? "Hints on" : "Hints";
   els.hints.classList.toggle("on", hintsOn);
   els.hints.setAttribute("aria-pressed", String(hintsOn));
@@ -551,7 +561,6 @@ function startNewGame() {
   } catch { /* sandboxed frames refuse history writes */ }
   game = new Game();
   game.hintsUsed = hintsOn;
-  bestRunShown = false;
   definitionFor = null;
   landingFrom = 0;
   setNote("");

@@ -248,3 +248,14 @@ test("stalling forfeits the bonus", () => {
   assert.equal(game.phase, "done", "BO holds no A or I, so nothing falls");
   assert.equal(game.score.bonus, 0, "the three points are lost");
 });
+
+test("seeing a perfect run closes the game", () => {
+  const game = new Game({ seed: "plant" });
+  play(game, [1, 2, 3], "d");
+  assert.equal(game.undo(), true, "undo works before looking");
+
+  play(game, [1, 2, 3], "d");
+  game.answerShown = true;
+  assert.equal(game.undo(), false, "and refuses after");
+  assert.equal(game.currentWord, "land", "the board does not move");
+});
