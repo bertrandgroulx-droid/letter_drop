@@ -8,7 +8,6 @@ const els = {
   score: document.getElementById("score"),
   keyboard: document.getElementById("keyboard"),
   undo: document.getElementById("undo"),
-  commit: document.getElementById("commit"),
   tallyDetail: document.getElementById("tally-detail"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
@@ -102,8 +101,24 @@ function renderDraft() {
     tile.textContent = letter;
     div.append(tile);
   }
-  div.append(renderSlot("end"));
+  div.append(renderSlot("end"), renderConfirm());
   return div;
+}
+
+/** Lights up only once a letter is in place. */
+function renderConfirm() {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "confirm";
+  button.disabled = !game.letter;
+  button.setAttribute(
+    "aria-label",
+    game.letter ? `Make ${game.draftWord.toUpperCase()}` : "Make the word"
+  );
+  button.innerHTML =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.7 4.7L19 7"/></svg>';
+  button.addEventListener("click", onEnter);
+  return button;
 }
 
 function renderResult() {
@@ -169,11 +184,6 @@ function render() {
   els.message.classList.toggle("error", noteIsError);
   els.score.textContent = game.score.total;
   els.tallyDetail.textContent = tallyText();
-  els.commit.hidden = game.phase !== "build";
-  els.commit.disabled = !game.letter;
-  els.commit.textContent = game.letter
-    ? `Make ${game.draftWord.toUpperCase()}`
-    : "Make the word";
   els.undo.disabled = game.rows.length < 2 && !game.selection.length && game.phase !== "build";
   renderKeyboard();
 }
@@ -279,7 +289,6 @@ function startNewGame() {
 
 /* ---------- wiring ---------- */
 
-els.commit.addEventListener("click", onEnter);
 els.undo.addEventListener("click", onBackspace);
 els.newGame.addEventListener("click", startNewGame);
 els.howTo.addEventListener("click", () => els.rules.showModal());

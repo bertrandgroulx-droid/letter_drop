@@ -193,6 +193,50 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 .slot.active { border-color: var(--new); border-style: solid; color: var(--new); }
 .slot.active:empty::after { content: "?"; opacity: 0.55; }
 .slot.filled { border-style: solid; border-color: var(--new); color: var(--new); }
+/* Sits just off the end of the word being built, so the tiles stay centred
+   under the row above no matter how wide the button is. */
+.row.draft { position: relative; }
+
+.confirm {
+  position: absolute;
+  left: calc(100% + 0.45rem);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  color: var(--ink-dim);
+}
+
+.confirm svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.confirm:disabled { opacity: 0.4; }
+
+.confirm:not(:disabled) {
+  background: var(--new);
+  border-color: var(--new);
+  color: #fff;
+  animation: pop 0.18s ease-out;
+}
+
+.confirm:not(:disabled):hover { border-color: var(--new); }
+
+@keyframes pop {
+  from { transform: translateY(-50%) scale(0.7); }
+}
+
 .row.shake { animation: shake 0.3s; }
 
 @keyframes shake {
@@ -205,7 +249,6 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 .message b { color: var(--ink); }
 
 .controls { display: flex; align-items: center; gap: 0.6rem 1rem; flex-wrap: wrap; justify-content: center; }
-#commit { padding: 0.5rem 1.1rem; font-family: var(--font-display); font-weight: 600; }
 
 /* ---------- result ---------- */
 

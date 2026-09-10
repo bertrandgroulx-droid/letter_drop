@@ -198,6 +198,50 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 .slot.active { border-color: var(--new); border-style: solid; color: var(--new); }
 .slot.active:empty::after { content: "?"; opacity: 0.55; }
 .slot.filled { border-style: solid; border-color: var(--new); color: var(--new); }
+/* Sits just off the end of the word being built, so the tiles stay centred
+   under the row above no matter how wide the button is. */
+.row.draft { position: relative; }
+
+.confirm {
+  position: absolute;
+  left: calc(100% + 0.45rem);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  color: var(--ink-dim);
+}
+
+.confirm svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.confirm:disabled { opacity: 0.4; }
+
+.confirm:not(:disabled) {
+  background: var(--new);
+  border-color: var(--new);
+  color: #fff;
+  animation: pop 0.18s ease-out;
+}
+
+.confirm:not(:disabled):hover { border-color: var(--new); }
+
+@keyframes pop {
+  from { transform: translateY(-50%) scale(0.7); }
+}
+
 .row.shake { animation: shake 0.3s; }
 
 @keyframes shake {
@@ -210,7 +254,6 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 .message b { color: var(--ink); }
 
 .controls { display: flex; align-items: center; gap: 0.6rem 1rem; flex-wrap: wrap; justify-content: center; }
-#commit { padding: 0.5rem 1.1rem; font-family: var(--font-display); font-weight: 600; }
 
 /* ---------- result ---------- */
 
@@ -286,7 +329,6 @@ dialog form { text-align: right; }
   <div class="board" id="board" aria-label="Word chain"></div>
   <p class="message" id="message" role="status" aria-live="polite"></p>
   <div class="controls">
-    <button type="button" id="commit" class="primary" hidden>Make the word</button>
     <button type="button" id="undo" class="ghost">Undo</button>
   </div>
 </main>
@@ -572,7 +614,6 @@ const els = {
   score: document.getElementById("score"),
   keyboard: document.getElementById("keyboard"),
   undo: document.getElementById("undo"),
-  commit: document.getElementById("commit"),
   tallyDetail: document.getElementById("tally-detail"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
@@ -666,8 +707,24 @@ function renderDraft() {
     tile.textContent = letter;
     div.append(tile);
   }
-  div.append(renderSlot("end"));
+  div.append(renderSlot("end"), renderConfirm());
   return div;
+}
+
+/** Lights up only once a letter is in place. */
+function renderConfirm() {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "confirm";
+  button.disabled = !game.letter;
+  button.setAttribute(
+    "aria-label",
+    game.letter ? `Make ${game.draftWord.toUpperCase()}` : "Make the word"
+  );
+  button.innerHTML =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.7 4.7L19 7"/></svg>';
+  button.addEventListener("click", onEnter);
+  return button;
 }
 
 function renderResult() {
@@ -733,11 +790,6 @@ function render() {
   els.message.classList.toggle("error", noteIsError);
   els.score.textContent = game.score.total;
   els.tallyDetail.textContent = tallyText();
-  els.commit.hidden = game.phase !== "build";
-  els.commit.disabled = !game.letter;
-  els.commit.textContent = game.letter
-    ? `Make ${game.draftWord.toUpperCase()}`
-    : "Make the word";
   els.undo.disabled = game.rows.length < 2 && !game.selection.length && game.phase !== "build";
   renderKeyboard();
 }
@@ -843,7 +895,6 @@ function startNewGame() {
 
 /* ---------- wiring ---------- */
 
-els.commit.addEventListener("click", onEnter);
 els.undo.addEventListener("click", onBackspace);
 els.newGame.addEventListener("click", startNewGame);
 els.howTo.addEventListener("click", () => els.rules.showModal());
