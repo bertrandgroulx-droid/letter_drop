@@ -127,6 +127,7 @@ function renderRow(row, rowIndex, offset) {
     }
     div.append(tile);
   });
+  div.append(rowLookup(row.word));
   return div;
 }
 
@@ -344,6 +345,19 @@ function bookIcon() {
   return svg;
 }
 
+/** The book that takes the check's place once a word is on the board. */
+function rowLookup(word) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "row-lookup";
+  if (definitionFor === word && definitionIn === "board") button.classList.add("open");
+  button.setAttribute("aria-label", `What does ${word.toUpperCase()} mean?`);
+  button.title = `What does ${word.toUpperCase()} mean?`;
+  button.append(bookIcon());
+  button.addEventListener("click", () => showDefinition(word, "board"));
+  return button;
+}
+
 /** A word you can tap to find out what it means. */
 function lookupButton(word, where) {
   const button = document.createElement("button");
@@ -540,16 +554,12 @@ function renderBreakdown() {
     lines.push([label, `\u2212${game.score.penalty}`, true]);
   }
 
-  const words = new Set(game.breakdown.map((entry) => entry.word));
   els.breakdown.replaceChildren(...lines.map(([label, value, penalty]) => {
     const item = document.createElement("li");
 
-    const name = words.has(label)
-      ? lookupButton(label, "breakdown")
-      : Object.assign(document.createElement("span"), {
-          className: "bd-word",
-          textContent: label,
-        });
+    const name = document.createElement("span");
+    name.className = "bd-word";
+    name.textContent = label;
 
     const count = document.createElement("span");
     count.className = penalty ? "bd-count penalty" : "bd-count";
@@ -576,7 +586,7 @@ function render() {
   els.tallyDetail.textContent = tallyText();
   renderBreakdown();
   els.definition.replaceChildren(
-    ...(definitionFor && definitionIn === "breakdown" ? [renderDefinition()] : [])
+    ...(definitionFor && definitionIn === "board" ? [renderDefinition()] : [])
   );
   const somethingToUndo =
     game.rows.length > 1 || game.selection.length > 0 || game.phase === "build";
