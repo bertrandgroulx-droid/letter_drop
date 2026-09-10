@@ -1225,7 +1225,6 @@ function typeLetter(letter) {
 function onEnter() {
   if (game.phase !== "build") return;
 
-  const before = game.score.total;
   const result = game.submit();
   if (!result.ok) {
     setNote(result.reason, true);
@@ -1233,11 +1232,19 @@ function onEnter() {
     return shakeDraft();
   }
   landingFrom = game.rows.length - (result.fell ? 2 : 1);
-  const gained = game.score.total - before;
-  const made = `<b>${result.word.toUpperCase()}</b>`;
-  setNote(result.fell
-    ? `${made}, then the ${result.fell.toUpperCase()} fell on its own &middot; +${gained}`
-    : `${made} &middot; +${gained}`);
+
+  // The last move pays for three separate things, so name them rather than
+  // showing one number that looks like it came from nowhere.
+  const rows = game.breakdown;
+  const word = rows[rows.length - (result.fell ? 2 : 1)];
+  const name = `<b>${result.word.toUpperCase()}</b>`;
+  if (result.fell) {
+    const fall = rows[rows.length - 1];
+    setNote(`${name} +${word.points}, the ${result.fell.toUpperCase()} fell ` +
+      `+${fall.points}, finished +${game.score.bonus}`);
+  } else {
+    setNote(`${name} &middot; +${word.points}`);
+  }
   render();
 }
 
