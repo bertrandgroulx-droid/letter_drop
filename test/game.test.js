@@ -259,3 +259,34 @@ test("seeing a perfect run closes the game", () => {
   assert.equal(game.undo(), false, "and refuses after");
   assert.equal(game.currentWord, "land", "the board does not move");
 });
+
+test("giving up keeps the score and closes the game", () => {
+  const game = new Game({ seed: "plant" });
+  play(game, [1, 2, 3], "d");
+  const earned = game.score.total;
+
+  assert.equal(game.giveUp(), true);
+  assert.equal(game.phase, "gaveup");
+  assert.ok(game.isOver);
+  assert.equal(game.score.total, earned, "the words you made still count");
+  assert.equal(game.score.bonus, 0, "but you did not finish");
+  assert.equal(game.answerShown, true, "which is the point of giving up");
+  assert.equal(game.undo(), false, "and there is no going back");
+});
+
+test("giving up is refused once the game is already over", () => {
+  const game = new Game({ seed: "plant" });
+  perfectRun(game);
+  assert.equal(game.phase, "won");
+  assert.equal(game.giveUp(), false);
+  assert.equal(game.phase, "won", "a finished game is not overwritten");
+});
+
+test("no moves are possible after giving up", () => {
+  const game = new Game({ seed: "plant" });
+  game.giveUp();
+  assert.equal(game.canSelect(0), false);
+  assert.equal(game.toggleSelect(0), false);
+  assert.deepEqual(game.setLetter("d"), { ok: false });
+  assert.equal(game.submit().ok, false);
+});

@@ -476,6 +476,7 @@ dialog form { text-align: right; }
   <p class="message" id="message" role="status" aria-live="polite"></p>
   <div class="controls">
     <button type="button" id="undo" class="ghost">Undo</button>
+    <button type="button" id="give-up" class="ghost">Give up</button>
   </div>
 </main>
 
@@ -533,9 +534,10 @@ dialog form { text-align: right; }
      pay more, but taking one without a route to the bottom costs you the
      finish, and a bad split can leave you with nothing to make at all. When a
      game ends you can reveal a run that scored the lot, to see what you
-     missed. Looking closes that game: Undo stops working, so being stuck is a
-     real choice between paying for another go and giving up to see how it was
-     done.</p>
+     missed. You can also <b>give up</b> part way through, which keeps the
+     points you have and shows you the rest. Either way, looking closes that
+     game: Undo stops working, so being stuck is a real choice between paying
+     for another go and giving up to see how it was done.</p>
 
   <h3>The one thing to plan for</h3>
   <p class="tip">Nothing falls unless your <b>two-letter word holds an A or an
@@ -713,7 +715,19 @@ class Game {
   }
 
   get isOver() {
-    return this.phase === "won" || this.phase === "done" || this.phase === "stuck";
+    return ["won", "done", "stuck", "gaveup"].includes(this.phase);
+  }
+
+  /**
+   * Stop playing and take the score as it stands, in exchange for seeing how
+   * it should have gone. The phase change closes off every move, and the
+   * answer being shown closes off undo.
+   */
+  giveUp() {
+    if (this.isOver) return false;
+    this.phase = "gaveup";
+    this.answerShown = true;
+    return true;
   }
 
   /** Words the player made. The opener was dealt, not earned, so it does not count. */
@@ -947,6 +961,7 @@ const els = {
   breakdown: document.getElementById("breakdown"),
   hints: document.getElementById("hints"),
   tallyLabel: document.getElementById("tally-label"),
+  giveUp: document.getElementById("give-up"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
   rules: document.getElementById("rules"),
@@ -962,6 +977,7 @@ let game = new Game({ seed: requestedSeed() });
 let landingFrom = 0;
 let hintsOn = false;
 let definitionFor = null;
+let giveUpArmed = false;
 
 // Free, no key, no sign-up. Blocked outright in some embeddings, which is what
 // the Wiktionary fallback is for.
@@ -1011,6 +1027,7 @@ function renderRow(row, rowIndex) {
     if (interactive) {
       tile.type = "button";
       tile.addEventListener("click", () => {
+        disarmGiveUp();
         game.toggleSelect(index);
         if (game.phase === "build") landingFrom = game.rows.length;
         setNote("");
@@ -1074,9 +1091,11 @@ function renderResult() {
   const { words, letters, total } = game.score;
   const box = document.createElement("div");
   box.className = "result";
-  const heading = game.phase === "won"
-    ? "Cleared it."
-    : game.phase === "done" ? "End of the line." : "Stuck.";
+  const heading = {
+    won: "Cleared it.",
+    gaveup: "Gave up.",
+    done: "End of the line.",
+  }[game.phase] ?? "Stuck.";
   const { penalty, bonus } = game.score;
   const newLetters = game.newLetters.map((c) => c.toUpperCase()).join(" ") || "none";
   const undoRow = penalty
@@ -1376,6 +1395,9 @@ function render() {
     canUndo && game.rows.length > 1 && !game.selection.length && game.phase !== "build";
   els.undo.disabled = !canUndo;
   els.undo.textContent = undoCosts ? `Undo \u2212${UNDO_COST}` : "Undo";
+  els.giveUp.hidden = game.isOver;
+  els.giveUp.textContent = giveUpArmed ? "Sure? Show the answer" : "Give up";
+  els.giveUp.classList.toggle("on", giveUpArmed);
   els.undo.title = game.answerShown
     ? "You have seen a perfect run, so this game is closed."
     : "";
@@ -1441,6 +1463,7 @@ function shakeDraft() {
 }
 
 function typeLetter(letter) {
+  disarmGiveUp();
   if (game.phase !== "build") {
     setNote(game.phase === "select" ? "Drop your letters first." : "", game.phase === "select");
     return render();
@@ -1451,6 +1474,7 @@ function typeLetter(letter) {
 }
 
 function onEnter() {
+  disarmGiveUp();
   if (game.phase !== "build") return;
 
   const result = game.submit();
@@ -1467,6 +1491,7 @@ function onEnter() {
 }
 
 function onBackspace() {
+  disarmGiveUp();
   if (game.phase === "build" && game.letter) {
     game.setLetter("");
   } else {
@@ -1480,6 +1505,22 @@ function onBackspace() {
 function openRules() {
   els.rules.showModal();
   els.rules.scrollTop = 0;
+}
+
+function onGiveUp() {
+  if (giveUpArmed) {
+    game.giveUp();
+    giveUpArmed = false;
+  } else {
+    giveUpArmed = true;
+  }
+  setNote("");
+  render();
+}
+
+/** Any other move cancels a half-pressed Give up. */
+function disarmGiveUp() {
+  giveUpArmed = false;
 }
 
 function toggleHints() {
@@ -1496,6 +1537,7 @@ function startNewGame() {
   } catch { /* sandboxed frames refuse history writes */ }
   game = new Game();
   game.hintsUsed = hintsOn;
+  giveUpArmed = false;
   definitionFor = null;
   landingFrom = 0;
   setNote("");
@@ -1506,6 +1548,7 @@ function startNewGame() {
 
 els.undo.addEventListener("click", onBackspace);
 els.newGame.addEventListener("click", startNewGame);
+els.giveUp.addEventListener("click", onGiveUp);
 els.hints.addEventListener("click", toggleHints);
 els.howTo.addEventListener("click", openRules);
 

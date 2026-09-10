@@ -12,6 +12,7 @@ const els = {
   breakdown: document.getElementById("breakdown"),
   hints: document.getElementById("hints"),
   tallyLabel: document.getElementById("tally-label"),
+  giveUp: document.getElementById("give-up"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
   rules: document.getElementById("rules"),
@@ -27,6 +28,7 @@ let game = new Game({ seed: requestedSeed() });
 let landingFrom = 0;
 let hintsOn = false;
 let definitionFor = null;
+let giveUpArmed = false;
 
 // Free, no key, no sign-up. Blocked outright in some embeddings, which is what
 // the Wiktionary fallback is for.
@@ -76,6 +78,7 @@ function renderRow(row, rowIndex) {
     if (interactive) {
       tile.type = "button";
       tile.addEventListener("click", () => {
+        disarmGiveUp();
         game.toggleSelect(index);
         if (game.phase === "build") landingFrom = game.rows.length;
         setNote("");
@@ -139,9 +142,11 @@ function renderResult() {
   const { words, letters, total } = game.score;
   const box = document.createElement("div");
   box.className = "result";
-  const heading = game.phase === "won"
-    ? "Cleared it."
-    : game.phase === "done" ? "End of the line." : "Stuck.";
+  const heading = {
+    won: "Cleared it.",
+    gaveup: "Gave up.",
+    done: "End of the line.",
+  }[game.phase] ?? "Stuck.";
   const { penalty, bonus } = game.score;
   const newLetters = game.newLetters.map((c) => c.toUpperCase()).join(" ") || "none";
   const undoRow = penalty
@@ -441,6 +446,9 @@ function render() {
     canUndo && game.rows.length > 1 && !game.selection.length && game.phase !== "build";
   els.undo.disabled = !canUndo;
   els.undo.textContent = undoCosts ? `Undo \u2212${UNDO_COST}` : "Undo";
+  els.giveUp.hidden = game.isOver;
+  els.giveUp.textContent = giveUpArmed ? "Sure? Show the answer" : "Give up";
+  els.giveUp.classList.toggle("on", giveUpArmed);
   els.undo.title = game.answerShown
     ? "You have seen a perfect run, so this game is closed."
     : "";
@@ -506,6 +514,7 @@ function shakeDraft() {
 }
 
 function typeLetter(letter) {
+  disarmGiveUp();
   if (game.phase !== "build") {
     setNote(game.phase === "select" ? "Drop your letters first." : "", game.phase === "select");
     return render();
@@ -516,6 +525,7 @@ function typeLetter(letter) {
 }
 
 function onEnter() {
+  disarmGiveUp();
   if (game.phase !== "build") return;
 
   const result = game.submit();
@@ -532,6 +542,7 @@ function onEnter() {
 }
 
 function onBackspace() {
+  disarmGiveUp();
   if (game.phase === "build" && game.letter) {
     game.setLetter("");
   } else {
@@ -545,6 +556,22 @@ function onBackspace() {
 function openRules() {
   els.rules.showModal();
   els.rules.scrollTop = 0;
+}
+
+function onGiveUp() {
+  if (giveUpArmed) {
+    game.giveUp();
+    giveUpArmed = false;
+  } else {
+    giveUpArmed = true;
+  }
+  setNote("");
+  render();
+}
+
+/** Any other move cancels a half-pressed Give up. */
+function disarmGiveUp() {
+  giveUpArmed = false;
 }
 
 function toggleHints() {
@@ -561,6 +588,7 @@ function startNewGame() {
   } catch { /* sandboxed frames refuse history writes */ }
   game = new Game();
   game.hintsUsed = hintsOn;
+  giveUpArmed = false;
   definitionFor = null;
   landingFrom = 0;
   setNote("");
@@ -571,6 +599,7 @@ function startNewGame() {
 
 els.undo.addEventListener("click", onBackspace);
 els.newGame.addEventListener("click", startNewGame);
+els.giveUp.addEventListener("click", onGiveUp);
 els.hints.addEventListener("click", toggleHints);
 els.howTo.addEventListener("click", openRules);
 

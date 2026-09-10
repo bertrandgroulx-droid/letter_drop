@@ -137,7 +137,19 @@ export class Game {
   }
 
   get isOver() {
-    return this.phase === "won" || this.phase === "done" || this.phase === "stuck";
+    return ["won", "done", "stuck", "gaveup"].includes(this.phase);
+  }
+
+  /**
+   * Stop playing and take the score as it stands, in exchange for seeing how
+   * it should have gone. The phase change closes off every move, and the
+   * answer being shown closes off undo.
+   */
+  giveUp() {
+    if (this.isOver) return false;
+    this.phase = "gaveup";
+    this.answerShown = true;
+    return true;
   }
 
   /** Words the player made. The opener was dealt, not earned, so it does not count. */
