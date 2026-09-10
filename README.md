@@ -69,6 +69,12 @@ and Wordset each cover only 52% of the game's 14,084 words and both miss AH,
 QI and KOR, which are exactly the words worth looking up. Webster's is also
 archaic enough to define LAND as urine.
 
+Senses that are really codes rather than words are skipped. 48 of the 101
+two-letter words are also ISO 639-1 language codes, and every game ends on a
+two-letter word, so without this AR reads as the code for Arabic instead of the
+letter R. If a word has nothing but a code entry, that is shown rather than
+nothing.
+
 Every word in a revealed run is fetched at once, so tapping one is instant
 rather than starting a request. Lookups give up after six seconds, and any
 failure falls back to a Wiktionary link. Definitions arrive as markup and are

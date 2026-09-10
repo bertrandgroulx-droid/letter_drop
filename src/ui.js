@@ -221,14 +221,26 @@ function shorten(text, limit = 170) {
   return text.slice(0, cut > 40 ? cut : limit) + "\u2026";
 }
 
-/** The first English sense that has any words in it. */
+// Nearly half the two-letter words double as ISO codes, and Wiktionary often
+// leads with that, so AR reads as "the code for Arabic" rather than a word.
+const CODE_SENSE = /\bISO\b|\b(?:language|country|currency)\s+code\b/i;
+const CODE_SECTION = /^(?:symbol|letter|number|numeral)$/;
+
+/** The first English sense that reads as a word rather than an abbreviation. */
 function firstSense(data) {
-  for (const section of data?.en ?? []) {
+  const sections = data?.en ?? [];
+  return pickSense(sections, true) ?? pickSense(sections, false);
+}
+
+function pickSense(sections, skipCodes) {
+  for (const section of sections) {
+    const part = (section.partOfSpeech ?? "").toLowerCase();
+    if (skipCodes && CODE_SECTION.test(part)) continue;
     for (const item of section.definitions ?? []) {
       const text = plainText(item.definition ?? "");
-      if (text) {
-        return { part: (section.partOfSpeech ?? "").toLowerCase(), text: shorten(text) };
-      }
+      if (!text) continue;
+      if (skipCodes && CODE_SENSE.test(text)) continue;
+      return { part, text: shorten(text) };
     }
   }
   return null;
