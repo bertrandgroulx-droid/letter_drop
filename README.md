@@ -192,8 +192,8 @@ python3 tools/build_single.py
 
 ## The word list
 
-`src/words.js` holds every legal 2- to 5-letter word (14,084 of them) plus the
-3,059 five-letter openers the game deals. Openers are drawn from common words
+`src/words.js` holds every legal 2- to 5-letter word (14,915 of them) plus the
+3,058 five-letter openers the game deals. Openers are drawn from common words
 only, and each one is verified solvable under the no-reused-letters rule before
 it goes in the list, so you can never be dealt a puzzle that cannot be
 finished. Getting stuck is always a matter of which split you chose. Undo walks
@@ -202,10 +202,15 @@ it back, for a point.
 To rebuild it, fetch the two source lists and run the generator:
 
 ```
-curl -O https://raw.githubusercontent.com/redbo/scrabble/master/dictionary.txt
+curl -O https://raw.githubusercontent.com/scrabblewords/scrabblewords/master/words/North-American/NWL2023.txt
 curl -O https://raw.githubusercontent.com/dolph/dictionary/master/popular.txt
-python3 tools/build_words.py dictionary.txt popular.txt
+python3 tools/build_words.py NWL2023.txt popular.txt
 ```
 
-Words come from the TWL06 tournament list, which is why some legal plays look
-unusual. QI and ZA are words here.
+Words come from NWL2023, the current NASPA list used for tournament play in
+North America, which is why some legal plays look unusual. QI and ZA are words
+here, and so are OK and EW.
+
+Only the words are taken. That list ships with definitions, which are
+Merriam-Webster's, so they are left where they are and the game fetches
+definitions from Wiktionary instead.

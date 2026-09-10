@@ -1,25 +1,34 @@
 #!/usr/bin/env python3
 """Build the bundled dictionary and the list of solvable starting words.
 
-Inputs are two public word lists (see SOURCES). The output, src/words.js, holds
-every legal 2-5 letter word plus a pre-verified list of 5-letter openers that
-have at least one full solution path down to a 2-letter word.
+Inputs are two public word lists (see SOURCES). Only the words are taken; the
+NASPA list ships with definitions, which are Merriam-Webster's and are left
+where they are. Definitions in the game come from Wiktionary at runtime.
 
-Usage: python3 tools/build_words.py <twl.txt> <popular.txt>
+The output, src/words.js, holds every legal 2-5 letter word plus a pre-verified
+list of 5-letter openers that can be played all the way down.
+
+Usage: python3 tools/build_words.py <lexicon.txt> <popular.txt>
 """
 import sys
 from string import ascii_lowercase
 
 SOURCES = {
-    "twl": "github.com/redbo/scrabble (TWL06 tournament word list)",
+    "lexicon": "github.com/scrabblewords/scrabblewords (NWL2023, NASPA word list)",
     "popular": "github.com/dolph/dictionary (popular.txt)",
 }
 MIN_LEN, MAX_LEN = 2, 5
 
 
 def load(path):
+    """First token of each line, so a bare list and a defined one both work."""
+    words = set()
     with open(path) as fh:
-        return {w for w in (line.strip().lower() for line in fh) if w.isalpha()}
+        for line in fh:
+            token = line.split()[:1]
+            if token and token[0].isalpha():
+                words.add(token[0].lower())
+    return words
 
 
 def by_length(words):
@@ -63,8 +72,8 @@ def solvable(word, dictionary, used):
 
 
 def main():
-    twl, popular = load(sys.argv[1]), load(sys.argv[2])
-    dictionary = by_length(twl)
+    lexicon, popular = load(sys.argv[1]), load(sys.argv[2])
+    dictionary = by_length(lexicon)
 
     common = sorted(dictionary[5] & popular)
     seeds = [w for w in common if solvable(w, dictionary, set(w))]
