@@ -244,7 +244,7 @@ function renderResult() {
   } else {
     const reveal = document.createElement("button");
     reveal.className = "ghost reveal";
-    reveal.textContent = game.isPerfect ? "Show another perfect run" : "Show a perfect run";
+    reveal.textContent = "Show a perfect run";
     reveal.addEventListener("click", () => {
       game.answerShown = true;
       prefetchDefinitions();
@@ -434,9 +434,7 @@ function renderBestRun() {
   wrap.className = "best-run";
 
   const title = document.createElement("h3");
-  title.textContent = game.isPerfect
-    ? `Another run worth ${game.bestPossible}`
-    : `A perfect run, worth ${game.bestPossible}`;
+  title.textContent = `A perfect run, worth ${game.bestPossible}`;
   wrap.append(title);
 
   const rows = [
