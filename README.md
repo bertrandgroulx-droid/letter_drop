@@ -61,6 +61,22 @@ Then open http://localhost:8000/dev.html.
 Add `?word=plant` to the URL to open a specific puzzle. That is how you share a
 game with someone or replay one.
 
+## On a phone
+
+Open the page and use Add to Home Screen. It launches without browser chrome
+and gets a real icon, because `manifest.webmanifest` and the PNGs in `icons/`
+are there for it. The page also keeps clear of the notch and the home
+indicator once the browser bars are gone.
+
+Redrawing the icons is the one job here that needs a browser, so unlike
+everything else it is not dependency-free:
+
+```
+npm i -D playwright && node tools/build_icons.mjs
+```
+
+The output is committed, so you should not need to run it.
+
 ## Tests
 
 ```
@@ -81,8 +97,11 @@ src/ui.js             rendering, keyboard, and input
 src/words.js          generated word data, do not edit
 tools/build_words.py  regenerates src/words.js
 tools/build_single.py packs dev.html and src/ into index.html
+tools/build_icons.mjs redraws icon.svg and the home screen icons
 test/game.test.js     tests for the rules
+manifest.webmanifest  what a phone reads when adding the game to a home screen
 index.html            generated, do not edit
+icon.svg, icons/      generated, do not edit
 dist/artifact.html    generated, the same page without a document wrapper
 ```
 

@@ -61,7 +61,7 @@ def main():
     body = re.search(r"<body>(.*?)</body>", page, re.S).group(1)
     head = "\n".join(
         line for line in head.splitlines()
-        if not re.search(r'<meta|rel="icon"', line)
+        if not re.search(r'<meta|rel="(?:icon|manifest|apple-touch-icon)"', line)
     )
     (out / "artifact.html").write_text(f"{head.strip()}\n{body.strip()}\n")
 

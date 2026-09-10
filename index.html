@@ -5,7 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Letter Drop</title>
 <meta name="description" content="A word game. Drop letters through shorter and shorter words.">
-<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPCEtLSBMZXR0ZXIgRHJvcC4gVGhlIGtlcHQgbGV0dGVyIHdhaXRzIHVwIHRvcCBpbiBhbWJlciwgdGhlIGFkZGVkIGxldHRlciBoYXMKICAgICAgIGZhbGxlbiB0byB0aGUgYm90dG9tIGluIGdyZWVuLCB0aXBwaW5nIG92ZXIgb24gdGhlIHdheSBkb3duLiAtLT4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNCIgZmlsbD0iIzFiMTgyMCIvPgoKICA8cmVjdCB4PSI3IiB5PSI2IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHJ4PSI1LjUiIGZpbGw9IiNmMGE4M2EiLz4KICA8cGF0aCBmaWxsPSIjMWIxODIwIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMyAxMSkiIGQ9Ik0wIDBoMy41djEwLjVIOVYxNEgwWiIvPgoKICA8ZyB0cmFuc2Zvcm09InJvdGF0ZSgxMiA0NSA0NCkiPgogICAgPHJlY3QgeD0iMzMiIHk9IjMyIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHJ4PSI1LjUiIGZpbGw9IiM0N2M5OGEiLz4KICAgIDxwYXRoIGZpbGw9IiMxYjE4MjAiIGZpbGwtcnVsZT0iZXZlbm9kZCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzkgMzcpIgogICAgICAgICAgZD0iTTAgMGg1YTcgNyAwIDAgMSAwIDE0SDBaIE0zLjUgMy41aDEuNWEzLjUgMy41IDAgMCAxIDAgN0gzLjVaIi8+CiAgPC9nPgo8L3N2Zz4K">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPCEtLSBMZXR0ZXIgRHJvcC4gVGhlIGtlcHQgbGV0dGVyIHdhaXRzIHVwIHRvcCBpbiBhbWJlciwgdGhlIGFkZGVkIGxldHRlciBoYXMKICAgICAgIGZhbGxlbiB0byB0aGUgYm90dG9tIGluIGdyZWVuLCB0aXBwaW5nIG92ZXIgb24gdGhlIHdheSBkb3duLiAtLT4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNCIgZmlsbD0iIzFiMTgyMCIvPgoKICA8cmVjdCB4PSI3IiB5PSI2IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHJ4PSI1LjUiIGZpbGw9IiNmMGE4M2EiLz4KICA8cGF0aCBmaWxsPSIjMWIxODIwIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMyAxMSkiIGQ9Ik0wIDBoMy41djEwLjVIOVYxNEgwWiIvPgogIDxnIHRyYW5zZm9ybT0icm90YXRlKDEyIDQ1IDQ0KSI+CiAgICA8cmVjdCB4PSIzMyIgeT0iMzIiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgcng9IjUuNSIgZmlsbD0iIzQ3Yzk4YSIvPgogICAgPHBhdGggZmlsbD0iIzFiMTgyMCIgZmlsbC1ydWxlPSJldmVub2RkIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzOSAzNykiCiAgICAgICAgICBkPSJNMCAwaDVhNyA3IDAgMCAxIDAgMTRIMFogTTMuNSAzLjVoMS41YTMuNSAzLjUgMCAwIDEgMCA3SDMuNVoiLz4KICA8L2c+Cjwvc3ZnPgo=">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f7f5f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17151b" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Letter Drop">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@400;600&display=swap">
@@ -80,7 +87,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 0 max(1rem, env(safe-area-inset-left)) 1rem;
+  padding:
+    env(safe-area-inset-top)
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
   background: var(--bg);
   color: var(--ink);
   font: 400 16px/1.5 var(--font-ui);

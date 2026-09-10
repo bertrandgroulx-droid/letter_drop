@@ -68,7 +68,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 0 max(1rem, env(safe-area-inset-left)) 1rem;
+  padding:
+    env(safe-area-inset-top)
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
   background: var(--bg);
   color: var(--ink);
   font: 400 16px/1.5 var(--font-ui);
