@@ -60,6 +60,9 @@ need one kept unspent for the final round.
   because a 3-point letter the round before covers what the last round would
   have paid. The bonus also means the greedy play of always grabbing the most
   expensive letter is wrong about half the time, since it stalls out.
+- **Three wrong guesses end the game.** Offering something that is not a word
+  costs a strike, and the third stops the run where it stands. Without it,
+  fishing for a two-letter word by trying every letter is free.
 - **Undo costs 1 point**, once there is a committed word to take back. Backing
   out of a split you have not committed yet is free. The total never goes below
   zero.

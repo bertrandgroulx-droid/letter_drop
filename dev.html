@@ -41,11 +41,13 @@
 
 <main>
   <div class="board" id="board" aria-label="Word chain"></div>
+  <div id="result"></div>
   <div id="definition"></div>
   <p class="message" id="message" role="status" aria-live="polite"></p>
   <div class="controls">
     <button type="button" id="undo" class="ghost">Undo</button>
     <button type="button" id="give-up" class="ghost">Give up</button>
+    <span class="strikes" id="strikes" aria-live="polite"></span>
   </div>
 </main>
 
@@ -97,6 +99,9 @@
     <li><b>3 points</b> for getting all the way down to a single letter. Stop
         short and you lose them, so the expensive letter is not always worth
         taking.</li>
+    <li><b>Three wrong guesses and you are out.</b> Offering something that is
+        not a word costs you a strike, and the third ends the game where it
+        stands. Fishing for a two-letter word is not free.</li>
     <li><b>Undo costs 1 point</b> once there is a word to take back. Backing out
         of a split you have not committed is free, and your score never goes
         below zero.</li>

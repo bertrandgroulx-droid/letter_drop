@@ -1,4 +1,4 @@
-import { FINISH_BONUS, Game, UNDO_COST, letterValue, playableLetters } from "./game.js";
+import { FINISH_BONUS, Game, STRIKE_LIMIT, UNDO_COST, letterValue, playableLetters } from "./game.js";
 import { DICTIONARY } from "./words.js";
 
 const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
@@ -11,9 +11,11 @@ const els = {
   tallyDetail: document.getElementById("tally-detail"),
   breakdown: document.getElementById("breakdown"),
   definition: document.getElementById("definition"),
+  result: document.getElementById("result"),
   hints: document.getElementById("hints"),
   tallyLabel: document.getElementById("tally-label"),
   giveUp: document.getElementById("give-up"),
+  strikes: document.getElementById("strikes"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
   rules: document.getElementById("rules"),
@@ -187,6 +189,7 @@ function renderResult() {
   const heading = {
     won: "Cleared it.",
     gaveup: "Gave up.",
+    struckout: "Three strikes.",
     done: "End of the line.",
   }[game.phase] ?? "Stuck.";
   const { penalty, bonus } = game.score;
@@ -575,9 +578,11 @@ function render() {
   els.board.style.setProperty("--extent", layout.extent);
   els.board.replaceChildren(
     ...game.rows.map((row, i) => renderRow(row, i, layout.offsets[i])),
-    ...(game.phase === "build" ? [renderDraft(layout.offsets[game.rows.length])] : []),
-    ...(game.isOver ? [renderResult()] : [])
+    ...(game.phase === "build" ? [renderDraft(layout.offsets[game.rows.length])] : [])
   );
+  // Outside the board, so the width of the result panel cannot decide how big
+  // the tiles are.
+  els.result.replaceChildren(...(game.isOver ? [renderResult()] : []));
   landingFrom = Infinity;
   els.message.innerHTML = note || defaultNote();
   els.message.classList.toggle("error", noteIsError);
@@ -588,19 +593,20 @@ function render() {
   els.definition.replaceChildren(
     ...(definitionFor && definitionIn === "board" ? [renderDefinition()] : [])
   );
-  const somethingToUndo =
-    game.rows.length > 1 || game.selection.length > 0 || game.phase === "build";
-  const canUndo = somethingToUndo && !game.answerShown;
-  const undoCosts =
-    canUndo && game.rows.length > 1 && !game.selection.length && game.phase !== "build";
-  els.undo.disabled = !canUndo;
+  const undoCosts = game.canUndo &&
+    game.rows.length > 1 && !game.selection.length && game.phase !== "build";
+  els.undo.disabled = !game.canUndo;
   els.undo.textContent = undoCosts ? `Undo \u2212${UNDO_COST}` : "Undo";
+  els.strikes.replaceChildren(...Array.from({ length: STRIKE_LIMIT }, (_, i) => {
+    const mark = document.createElement("i");
+    mark.className = i < game.strikes ? "strike used" : "strike";
+    return mark;
+  }));
+  els.strikes.title = `${game.strikes} of ${STRIKE_LIMIT} wrong guesses used`;
   els.giveUp.hidden = game.isOver;
   els.giveUp.textContent = giveUpArmed ? "Sure? Show the answer" : "Give up";
   els.giveUp.classList.toggle("armed", giveUpArmed);
-  els.undo.title = game.answerShown
-    ? "You have seen a perfect run, so this game is closed."
-    : "";
+  els.undo.title = game.canUndo ? "" : "This game is closed.";
   els.hints.textContent = hintsOn ? "Hints on" : hintsArmed ? "Turn on?" : "Hints";
   els.hints.classList.toggle("on", hintsOn);
   els.hints.classList.toggle("armed", hintsArmed);
@@ -680,7 +686,10 @@ function onEnter() {
 
   const result = game.submit();
   if (!result.ok) {
-    setNote(result.reason, true);
+    const left = STRIKE_LIMIT - (result.strikes ?? 0);
+    setNote(result.strikes
+      ? `${result.reason} ${left ? `${left} guess${left === 1 ? "" : "es"} left.` : "That is three."}`
+      : result.reason, true);
     render();
     return shakeDraft();
   }

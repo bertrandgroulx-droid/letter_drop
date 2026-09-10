@@ -290,3 +290,58 @@ test("no moves are possible after giving up", () => {
   assert.deepEqual(game.setLetter("d"), { ok: false });
   assert.equal(game.submit().ok, false);
 });
+
+test("three wrong guesses end the game", () => {
+  const game = new Game({ seed: "plant" });
+  [1, 2, 3].forEach((i) => game.toggleSelect(i));
+
+  for (const [attempt, letter] of [[1, "z"], [2, "q"], [3, "v"]]) {
+    game.setLetter(letter);
+    const result = game.submit();
+    assert.equal(result.ok, false);
+    assert.equal(result.strikes, attempt);
+  }
+
+  assert.equal(game.phase, "struckout");
+  assert.ok(game.isOver);
+  assert.equal(game.undo(), false, "no going back for another go");
+});
+
+test("a wrong guess does not cost a point, only a strike", () => {
+  const game = new Game({ seed: "plant" });
+  play(game, [1, 2, 3], "d");
+  const before = game.score.total;
+
+  [0, 1].forEach((i) => game.toggleSelect(i));
+  game.setLetter("z");
+  game.submit();
+
+  assert.equal(game.strikes, 1);
+  assert.equal(game.score.total, before, "the score is untouched");
+  assert.equal(game.phase, "build", "and you can try again");
+});
+
+test("a letter already on the board is refused without costing a strike", () => {
+  const game = new Game({ seed: "plant" });
+  [1, 2, 3].forEach((i) => game.toggleSelect(i));
+  assert.equal(game.setLetter("p").ok, false);
+  assert.equal(game.strikes, 0, "it never reached the word list");
+});
+
+test("the button and the rule agree on whether undo is possible", () => {
+  const game = new Game({ seed: "plant" });
+  assert.equal(game.canUndo, false, "nothing has happened yet");
+
+  [1, 2, 3].forEach((i) => game.toggleSelect(i));
+  assert.equal(game.canUndo, true);
+
+  game.setLetter("z");
+  game.submit();
+  game.setLetter("q");
+  game.submit();
+  game.setLetter("v");
+  game.submit();
+  assert.equal(game.phase, "struckout");
+  assert.equal(game.canUndo, false, "struck out, so the button must be dead too");
+  assert.equal(game.undo(), false);
+});

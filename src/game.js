@@ -6,6 +6,9 @@ const SINGLE_LETTER_WORDS = ["a", "i"];
 export const POINTS_PER_WORD = 2;
 export const UNDO_COST = 1;
 
+/** Guesses at whether something is a word, before the game stops you. */
+export const STRIKE_LIMIT = 3;
+
 /**
  * For getting all the way down to a single letter. Without it, stalling on a
  * two-letter word that holds no A or I costs nothing on about a third of
@@ -118,6 +121,7 @@ export class Game {
     this.letter = "";
     this.phase = "select";
     this.undos = 0;
+    this.strikes = 0;
     this.hintsUsed = false;
     this.answerShown = false;
     this.best = null;
@@ -137,7 +141,7 @@ export class Game {
   }
 
   get isOver() {
-    return ["won", "done", "stuck", "gaveup"].includes(this.phase);
+    return ["won", "done", "stuck", "gaveup", "struckout"].includes(this.phase);
   }
 
   /**
@@ -312,7 +316,14 @@ export class Game {
     }
     const word = this.draftWord;
     if (!this.dictionary[word.length].has(word)) {
-      return { ok: false, reason: `${word.toUpperCase()} is not in the word list.` };
+      // Guessing costs something, or fishing for a two-letter word is free.
+      this.strikes += 1;
+      if (this.strikes >= STRIKE_LIMIT) this.phase = "struckout";
+      return {
+        ok: false,
+        reason: `${word.toUpperCase()} is not in the word list.`,
+        strikes: this.strikes,
+      };
     }
     this.rows.push({
       word,
@@ -340,11 +351,19 @@ export class Game {
     return letter;
   }
 
+  /**
+   * Whether there is anything to take back and whether the game still allows
+   * it. Once a perfect run has been revealed there is no unseeing it, and a
+   * game lost on strikes does not get another go.
+   */
+  get canUndo() {
+    if (this.answerShown || this.phase === "struckout") return false;
+    return this.rows.length > 1 || this.selection.length > 0 || this.phase === "build";
+  }
+
   /** Step back one word, or clear a half-finished selection. */
   undo() {
-    // Once a perfect run has been revealed there is no unseeing it, so this
-    // game is closed rather than replayable with the answer in hand.
-    if (this.answerShown) return false;
+    if (!this.canUndo) return false;
     if (this.phase === "build") {
       this.currentRow.kept = null;
       this.selection = [];

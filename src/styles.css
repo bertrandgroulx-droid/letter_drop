@@ -227,6 +227,9 @@ main {
   flex-direction: column;
   align-items: flex-start;
   gap: 1rem;
+  /* The book hangs off the end of each row, so the board reserves its width
+     and the whole thing centres as one piece. */
+  padding-right: 3rem;
 }
 
 .row {
@@ -379,6 +382,17 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 }
 
 .result h2 { margin: 0 0 0.5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
+.strikes { display: inline-flex; gap: 0.28rem; align-items: center; }
+
+.strike {
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+}
+
+.strike.used { background: var(--bad); border-color: var(--bad); }
+
 .result-actions { display: flex; gap: 0.5rem; justify-content: center; }
 .practice { margin: 0 0 0.75rem; font-size: 0.85rem; color: var(--keep); }
 
@@ -487,11 +501,11 @@ button.lookup:hover .book { opacity: 1; }
 /* ---------- keyboard ---------- */
 
 .keyboard { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
-.kb-row { display: flex; gap: 0.3rem; }
+.kb-row { display: flex; gap: clamp(0.18rem, 1.2vw, 0.3rem); }
 
 .key {
   position: relative;
-  min-width: clamp(1.7rem, 8.2vw, 2.5rem);
+  min-width: clamp(1.35rem, 7.6vw, 2.5rem);
   height: clamp(2.6rem, 11vw, 3.2rem);
   padding: 0 0.25rem;
   font-family: var(--font-display);
@@ -500,7 +514,10 @@ button.lookup:hover .book { opacity: 1; }
   font-size: clamp(0.75rem, 3.4vw, 0.95rem);
 }
 
-.key.wide { min-width: clamp(3.2rem, 14vw, 4.5rem); }
+.key.wide {
+  min-width: clamp(2.5rem, 12.6vw, 4.5rem);
+  font-size: clamp(0.62rem, 2.9vw, 0.9rem);
+}
 
 /* What the letter is worth, sitting in the corner the way a Scrabble tile
    carries its value. */
