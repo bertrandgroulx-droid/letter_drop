@@ -6,6 +6,10 @@ const SINGLE_LETTER_WORDS = ["a", "i"];
 export const POINTS_PER_WORD = 2;
 export const POINTS_PER_NEW_LETTER = 1;
 
+/** Three rounds that can bring in a letter, then the last letter falling. */
+export const PERFECT_SCORE =
+  3 * (POINTS_PER_WORD + POINTS_PER_NEW_LETTER) + POINTS_PER_WORD;
+
 /** How many letters carry over from a word of this length into the next round. */
 export function keepCount(length) {
   return length - 2;

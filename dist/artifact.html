@@ -300,10 +300,24 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 }
 
 .result h2 { margin: 0 0 0.5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
+.result-actions { display: flex; gap: 0.5rem; justify-content: center; }
 .result dl { display: grid; grid-template-columns: auto auto; gap: 0.2rem 1.25rem; margin: 0 0 0.75rem; }
 .result dt { color: var(--ink-dim); text-align: left; }
 .result dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .result .total { border-top: 1px solid var(--line); padding-top: 0.3rem; }
+
+.share-fallback {
+  width: 100%;
+  margin-top: 0.6rem;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8rem;
+  resize: none;
+}
 
 /* ---------- keyboard ---------- */
 
@@ -422,6 +436,10 @@ const SINGLE_LETTER_WORDS = ["a", "i"];
 
 const POINTS_PER_WORD = 2;
 const POINTS_PER_NEW_LETTER = 1;
+
+/** Three rounds that can bring in a letter, then the last letter falling. */
+const PERFECT_SCORE =
+  3 * (POINTS_PER_WORD + POINTS_PER_NEW_LETTER) + POINTS_PER_WORD;
 
 /** How many letters carry over from a word of this length into the next round. */
 function keepCount(length) {
@@ -798,12 +816,78 @@ function renderResult() {
       <dt>New letters: ${newLetters}</dt><dd>${letters}</dd>
       <dt class="total">Total</dt><dd class="total">${total}</dd>
     </dl>`;
+  const share = document.createElement("button");
+  share.className = "primary";
+  share.textContent = "Share";
+  share.addEventListener("click", () => shareResult(share, box));
+
   const again = document.createElement("button");
-  again.className = "primary";
+  again.className = "ghost";
   again.textContent = "New game";
   again.addEventListener("click", startNewGame);
-  box.append(again);
+
+  const actions = document.createElement("div");
+  actions.className = "result-actions";
+  actions.append(share, again);
+  box.append(actions);
   return box;
+}
+
+/**
+ * A summary that shows the shape of the run without naming the words. Amber
+ * for a letter carried down, green for a letter you brought in and scored on,
+ * white for one you added but had used before.
+ */
+function shareText() {
+  const rows = game.rows.slice(1).map((row, index) => {
+    const entry = game.breakdown[index];
+    const added = row.added
+      ? (row.added.side === "front" ? 0 : row.word.length - 1)
+      : -1;
+    const squares = [...row.word]
+      .map((_, i) => (i === added ? (entry.newLetter ? "\u{1F7E9}" : "\u2B1C") : "\u{1F7E7}"))
+      .join("");
+    return `${squares} ${entry.points}`;
+  });
+
+  const link = `${location.origin}${location.pathname}?word=${game.seed}`;
+  return [
+    `Letter Drop \u00b7 ${game.seed.toUpperCase()}`,
+    `${game.score.total} of ${PERFECT_SCORE}`,
+    "",
+    ...rows,
+    "",
+    link,
+  ].join("\n");
+}
+
+async function shareResult(button, box) {
+  const text = shareText();
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ text });
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    button.textContent = "Copied";
+    setTimeout(() => { button.textContent = "Share"; }, 1600);
+    return;
+  } catch { /* clipboard is not available here */ }
+
+  if (box.querySelector(".share-fallback")) return;
+  const field = document.createElement("textarea");
+  field.className = "share-fallback";
+  field.readOnly = true;
+  field.rows = text.split("\n").length;
+  field.value = text;
+  box.append(field);
+  field.select();
 }
 
 function defaultNote() {

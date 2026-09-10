@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Game, blocks, keepCount, nextWords } from "../src/game.js";
+import { Game, PERFECT_SCORE, blocks, keepCount, nextWords } from "../src/game.js";
 import { DICTIONARY, SEED_WORDS } from "../src/words.js";
 
 test("each round keeps two fewer letters than the word", () => {
@@ -211,4 +211,8 @@ test("only the word that first brings a letter in scores for it", () => {
   game.submit();
   assert.equal(game.breakdown[1].newLetter, "e", "END brings in the E");
   assert.equal(game.breakdown[1].points, 3);
+});
+
+test("a perfect game is every word plus every new letter", () => {
+  assert.equal(PERFECT_SCORE, 11);
 });

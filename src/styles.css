@@ -295,10 +295,24 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 }
 
 .result h2 { margin: 0 0 0.5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
+.result-actions { display: flex; gap: 0.5rem; justify-content: center; }
 .result dl { display: grid; grid-template-columns: auto auto; gap: 0.2rem 1.25rem; margin: 0 0 0.75rem; }
 .result dt { color: var(--ink-dim); text-align: left; }
 .result dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .result .total { border-top: 1px solid var(--line); padding-top: 0.3rem; }
+
+.share-fallback {
+  width: 100%;
+  margin-top: 0.6rem;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8rem;
+  resize: none;
+}
 
 /* ---------- keyboard ---------- */
 

@@ -1,4 +1,4 @@
-import { Game } from "./game.js";
+import { Game, PERFECT_SCORE } from "./game.js";
 import { DICTIONARY } from "./words.js";
 
 const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
@@ -137,12 +137,78 @@ function renderResult() {
       <dt>New letters: ${newLetters}</dt><dd>${letters}</dd>
       <dt class="total">Total</dt><dd class="total">${total}</dd>
     </dl>`;
+  const share = document.createElement("button");
+  share.className = "primary";
+  share.textContent = "Share";
+  share.addEventListener("click", () => shareResult(share, box));
+
   const again = document.createElement("button");
-  again.className = "primary";
+  again.className = "ghost";
   again.textContent = "New game";
   again.addEventListener("click", startNewGame);
-  box.append(again);
+
+  const actions = document.createElement("div");
+  actions.className = "result-actions";
+  actions.append(share, again);
+  box.append(actions);
   return box;
+}
+
+/**
+ * A summary that shows the shape of the run without naming the words. Amber
+ * for a letter carried down, green for a letter you brought in and scored on,
+ * white for one you added but had used before.
+ */
+function shareText() {
+  const rows = game.rows.slice(1).map((row, index) => {
+    const entry = game.breakdown[index];
+    const added = row.added
+      ? (row.added.side === "front" ? 0 : row.word.length - 1)
+      : -1;
+    const squares = [...row.word]
+      .map((_, i) => (i === added ? (entry.newLetter ? "\u{1F7E9}" : "\u2B1C") : "\u{1F7E7}"))
+      .join("");
+    return `${squares} ${entry.points}`;
+  });
+
+  const link = `${location.origin}${location.pathname}?word=${game.seed}`;
+  return [
+    `Letter Drop \u00b7 ${game.seed.toUpperCase()}`,
+    `${game.score.total} of ${PERFECT_SCORE}`,
+    "",
+    ...rows,
+    "",
+    link,
+  ].join("\n");
+}
+
+async function shareResult(button, box) {
+  const text = shareText();
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ text });
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    button.textContent = "Copied";
+    setTimeout(() => { button.textContent = "Share"; }, 1600);
+    return;
+  } catch { /* clipboard is not available here */ }
+
+  if (box.querySelector(".share-fallback")) return;
+  const field = document.createElement("textarea");
+  field.className = "share-fallback";
+  field.readOnly = true;
+  field.rows = text.split("\n").length;
+  field.value = text;
+  box.append(field);
+  field.select();
 }
 
 function defaultNote() {
