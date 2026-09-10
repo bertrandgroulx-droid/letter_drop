@@ -383,19 +383,9 @@ function onEnter() {
     return shakeDraft();
   }
   landingFrom = game.rows.length - (result.fell ? 2 : 1);
-
-  // The last move pays for three separate things, so name them rather than
-  // showing one number that looks like it came from nowhere.
-  const rows = game.breakdown;
-  const word = rows[rows.length - (result.fell ? 2 : 1)];
-  const name = `<b>${result.word.toUpperCase()}</b>`;
-  if (result.fell) {
-    const fall = rows[rows.length - 1];
-    setNote(`${name} +${word.points}, the ${result.fell.toUpperCase()} fell ` +
-      `+${fall.points}, finished +${game.score.bonus}`);
-  } else {
-    setNote(`${name} &middot; +${word.points}`);
-  }
+  // No note on success. The score column already lists what the word was
+  // worth, so the line goes back to saying what to do next.
+  setNote("");
   render();
 }
 
