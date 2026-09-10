@@ -429,7 +429,17 @@ button.lookup:hover { color: var(--new); }
 }
 
 .definition a { color: var(--new); }
-.definition-source { color: var(--ink-dim); font-size: 0.72rem; }
+/* Its own line, and tall enough to hit with a thumb. */
+.definition-source {
+  display: block;
+  width: fit-content;
+  margin-top: 0.3rem;
+  padding-block: 0.4rem;
+  color: var(--new);
+  font-size: 0.78rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .result dl { display: grid; grid-template-columns: auto auto; gap: 0.2rem 1.25rem; margin: 0 0 0.75rem; }
 .result dt { color: var(--ink-dim); text-align: left; }
 .result dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
@@ -1326,6 +1336,16 @@ function prefetchDefinitions() {
   }
 }
 
+function wiktionaryLink(word, label) {
+  const link = document.createElement("a");
+  link.className = "definition-source";
+  link.href = `https://en.wiktionary.org/wiki/${encodeURIComponent(word)}`;
+  link.target = "_blank";
+  link.rel = "noopener";
+  link.textContent = label;
+  return link;
+}
+
 function showDefinition(word) {
   definitionFor = word;
   render();
@@ -1357,19 +1377,12 @@ function renderDefinition() {
       box.append(part, " \u00b7 ");
     }
     box.append(entry.text);
-    const source = document.createElement("span");
-    source.className = "definition-source";
-    source.textContent = "Wiktionary";
-    box.append(" ", source);
+    box.append(wiktionaryLink(definitionFor, "Full entry on Wiktionary \u2197"));
     return box;
   }
 
-  const link = document.createElement("a");
-  link.href = `https://en.wiktionary.org/wiki/${encodeURIComponent(definitionFor)}`;
-  link.target = "_blank";
-  link.rel = "noopener";
-  link.textContent = "look it up on Wiktionary";
-  box.append("could not be fetched here, so ", link, ".");
+  box.append("could not be fetched here.");
+  box.append(wiktionaryLink(definitionFor, "Look it up on Wiktionary \u2197"));
   return box;
 }
 

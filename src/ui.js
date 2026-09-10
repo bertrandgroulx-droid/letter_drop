@@ -313,6 +313,16 @@ function prefetchDefinitions() {
   }
 }
 
+function wiktionaryLink(word, label) {
+  const link = document.createElement("a");
+  link.className = "definition-source";
+  link.href = `https://en.wiktionary.org/wiki/${encodeURIComponent(word)}`;
+  link.target = "_blank";
+  link.rel = "noopener";
+  link.textContent = label;
+  return link;
+}
+
 function showDefinition(word) {
   definitionFor = word;
   render();
@@ -344,19 +354,12 @@ function renderDefinition() {
       box.append(part, " \u00b7 ");
     }
     box.append(entry.text);
-    const source = document.createElement("span");
-    source.className = "definition-source";
-    source.textContent = "Wiktionary";
-    box.append(" ", source);
+    box.append(wiktionaryLink(definitionFor, "Full entry on Wiktionary \u2197"));
     return box;
   }
 
-  const link = document.createElement("a");
-  link.href = `https://en.wiktionary.org/wiki/${encodeURIComponent(definitionFor)}`;
-  link.target = "_blank";
-  link.rel = "noopener";
-  link.textContent = "look it up on Wiktionary";
-  box.append("could not be fetched here, so ", link, ".");
+  box.append("could not be fetched here.");
+  box.append(wiktionaryLink(definitionFor, "Look it up on Wiktionary \u2197"));
   return box;
 }
 
