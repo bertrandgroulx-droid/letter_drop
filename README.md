@@ -35,18 +35,19 @@ came from the opening word or from a word you made. That is its only marking.
 
 ## Playing it
 
-The quickest way is to open `dist/letter-drop.html`. It is the whole game in one
-file, so a double-click works with no server and no internet.
+The quickest way is to open `index.html`. It is the whole game in one file, so
+a double-click works with no server and no internet.
 
-To work on the source instead, serve the folder. The game is plain HTML, CSS,
-and JavaScript with no dependencies and no build step, but it does use ES
-modules, which browsers refuse to load over `file://`.
+To work on the source instead, serve the folder and open `dev.html`, which
+loads the real modules. The game is plain HTML, CSS, and JavaScript with no
+dependencies, but it does use ES modules, which browsers refuse to load over
+`file://`.
 
 ```
 npm start          # python3 -m http.server 8000
 ```
 
-Then open http://localhost:8000.
+Then open http://localhost:8000/dev.html.
 
 Add `?word=plant` to the URL to open a specific puzzle. That is how you share a
 game with someone or replay one.
@@ -64,19 +65,22 @@ check that every opening word the game can deal is solvable to a single letter.
 ## Layout
 
 ```
-index.html            markup
+dev.html              markup, loading the modules below
 src/styles.css        styles
 src/game.js           the rules, with no DOM in sight
 src/ui.js             rendering, keyboard, and input
 src/words.js          generated word data, do not edit
 tools/build_words.py  regenerates src/words.js
-tools/build_single.py packs everything into dist/
+tools/build_single.py packs dev.html and src/ into index.html
 test/game.test.js     tests for the rules
-dist/                 generated single-file builds, do not edit
+index.html            generated, do not edit
+dist/artifact.html    generated, the same page without a document wrapper
 ```
 
-`dist/` is checked in so the game can be opened or handed to someone without a
-toolchain. Rebuild it after any change to the source:
+`index.html` is generated and checked in. Everything is inlined, which means a
+browser has no separate script or stylesheet left over from a previous visit,
+so a deployed change shows up on the next load. Rebuild after any change to the
+source, or the site will keep serving the old game:
 
 ```
 python3 tools/build_single.py

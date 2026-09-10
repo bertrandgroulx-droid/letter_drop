@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Inline the game into a single HTML file.
+"""Inline the game from dev.html into a single self-contained page.
 
-Writes two things to dist/:
+Writes:
 
-  letter-drop.html   a complete document that runs straight off the filesystem,
-                     with no server, because nothing is fetched over file://
-  artifact.html      the same page as a fragment, for hosts that supply their
+  index.html         what the site serves and what you can double-click. One
+                     file, so a browser has no separate script or stylesheet to
+                     hold on to from a previous visit.
+  dist/artifact.html the same page as a fragment, for hosts that supply their
                      own <head> and document wrapper
 
 Usage: python3 tools/build_single.py
@@ -34,7 +35,7 @@ def flatten(paths):
 
 
 def main():
-    html = (ROOT / "index.html").read_text()
+    html = (ROOT / "dev.html").read_text()
     css = (ROOT / "src/styles.css").read_text()
     js = flatten(SOURCES)
 
@@ -50,9 +51,9 @@ def main():
         f"<script type=\"module\">\n{js}\n</script>",
     )
 
+    (ROOT / "index.html").write_text(page)
     out = ROOT / "dist"
     out.mkdir(exist_ok=True)
-    (out / "letter-drop.html").write_text(page)
 
     # The fragment keeps <title> first so hosts that scan for it find it, and
     # drops the icon link because those hosts set their own.
@@ -64,9 +65,8 @@ def main():
     )
     (out / "artifact.html").write_text(f"{head.strip()}\n{body.strip()}\n")
 
-    for name in ("letter-drop.html", "artifact.html"):
-        size = (out / name).stat().st_size
-        print(f"dist/{name}  {size / 1024:.0f} KB")
+    for path in (ROOT / "index.html", out / "artifact.html"):
+        print(f"{path.relative_to(ROOT)}  {path.stat().st_size / 1024:.0f} KB")
 
 
 if __name__ == "__main__":
