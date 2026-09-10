@@ -342,6 +342,8 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 
 dialog {
   max-width: 34rem;
+  max-height: 85dvh;
+  overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -352,6 +354,8 @@ dialog {
 dialog::backdrop { background: rgb(0 0 0 / 0.55); }
 dialog h2 { margin-top: 0; font-family: var(--font-display); font-weight: 800; }
 dialog h3 { margin-bottom: 0.3rem; }
+dialog ul { padding-left: 1.2rem; margin-top: 0.3rem; }
+dialog li { margin-bottom: 0.3rem; }
 .rounds { padding-left: 1.2rem; }
 .rounds li { margin-bottom: 0.35rem; }
 .max { color: var(--ink-dim); font-size: 0.88rem; }

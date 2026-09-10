@@ -378,6 +378,12 @@ function onBackspace() {
   render();
 }
 
+/** Focus lands on the button at the end, so scroll back to the top after. */
+function openRules() {
+  els.rules.showModal();
+  els.rules.scrollTop = 0;
+}
+
 function startNewGame() {
   try {
     history.replaceState(null, "", location.pathname);
@@ -392,7 +398,7 @@ function startNewGame() {
 
 els.undo.addEventListener("click", onBackspace);
 els.newGame.addEventListener("click", startNewGame);
-els.howTo.addEventListener("click", () => els.rules.showModal());
+els.howTo.addEventListener("click", openRules);
 
 document.addEventListener("keydown", (event) => {
   if (event.metaKey || event.ctrlKey || event.altKey || els.rules.open) return;
@@ -416,6 +422,6 @@ document.addEventListener("keydown", (event) => {
 
 if (!store.get("letterdrop.seen")) {
   store.set("letterdrop.seen", "1");
-  els.rules.showModal();
+  openRules();
 }
 render();

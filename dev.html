@@ -51,27 +51,44 @@
 <dialog id="rules">
   <h2>How to play</h2>
   <p>You start with a five-letter word. Each round you keep some of its letters
-     and add one, making a word one letter shorter. Keep going until you are
-     down to a single letter.</p>
+     and add one more, making a word one letter shorter, until you are down to
+     a single letter.</p>
   <ol class="rounds">
-    <li><b>5 &rarr; 4</b> Select <b>three</b> letters in a row. Add one letter in front or behind.</li>
-    <li><b>4 &rarr; 3</b> Select <b>two</b> letters in a row. Add one letter in front or behind.</li>
-    <li><b>3 &rarr; 2</b> Select <b>one</b> letter. Add one letter in front or behind.</li>
-    <li><b>2 &rarr; 1</b> If your two-letter word holds an <b>A</b> or an <b>I</b>, let it fall. Those are the only one-letter words.</li>
+    <li><b>5 &rarr; 4</b> Keep <b>three</b> letters in a row, add one.</li>
+    <li><b>4 &rarr; 3</b> Keep <b>two</b> letters in a row, add one.</li>
+    <li><b>3 &rarr; 2</b> Keep <b>one</b> letter, add one.</li>
+    <li><b>2 &rarr; 1</b> If your two-letter word holds an <b>A</b> or an <b>I</b>,
+        it falls on its own. Those are the only one-letter words.</li>
   </ol>
-  <p>The letters you keep stay side by side and in order. The letter you add
-     goes on one end, never in the middle.</p>
-  <p><b>Every letter you add must be one you have not used yet.</b> Anything
-     already on the board, including the letters of the opening word, is greyed
-     out on the keyboard and cannot be played again.</p>
+
+  <h3>Two rules</h3>
+  <ul>
+    <li>The letters you keep stay side by side and in order, so the letter you
+        add goes on one <b>end</b>, never in the middle.</li>
+    <li>Every letter you add must be one you have <b>not used yet</b>. Anything
+        already on the board, the opening word included, is greyed out on the
+        keyboard.</li>
+  </ul>
+
+  <h3>Taking a turn</h3>
+  <p>Tap letters to keep them and they drop as soon as you have enough. Type a
+     letter, tap the empty slot at either end to choose which end it lands on,
+     then tap the green check. Words come from a Scrabble dictionary, so a few
+     odd ones are legal.</p>
+
   <h3>Scoring</h3>
   <ul>
     <li><b>2 points</b> for every word you make.</li>
-    <li><b>1 point</b> for the new letter each word brings in.</li>
-    <li><b>Undo costs 1 point</b>, once there is a word to take back. Backing
-        out of a split you have not committed is free.</li>
+    <li><b>1 point</b> for the letter it brings in. The last letter falls
+        without adding one, so that round is worth 2.</li>
+    <li><b>Undo costs 1 point</b> once there is a word to take back. Backing out
+        of a split you have not committed is free, and your score never goes
+        below zero.</li>
   </ul>
-  <p class="max">A clean run to a single letter with no undos is 11 points.</p>
+  <p class="max">A clean run with no undos is 11 points. Every opening word can
+     be played all the way down, but a bad split can leave you with nothing to
+     make, and then only Undo will save you.</p>
+
   <form method="dialog"><button class="primary">Got it</button></form>
 </dialog>
 
