@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Game, blocks, keepCount, nextWords, playableLetters } from "../src/game.js";
+import { Game, blocks, keepCount, nextWords } from "../src/game.js";
 import { DICTIONARY, SEED_WORDS } from "../src/words.js";
 
 test("each round keeps two fewer letters than the word", () => {
@@ -160,13 +160,6 @@ test("a dead end is reported instead of silently accepted", () => {
   game.setLetter("d");
   game.submit();
   assert.equal(game.phase, "stuck", "no 3-letter word survives from LAND");
-});
-
-test("hint letters agree with the dictionary", () => {
-  const letters = playableLetters("an", "front");
-  assert.ok(letters.has("c") && letters.has("m"), "CAN, MAN");
-  assert.ok(!letters.has("q"));
-  for (const c of letters) assert.ok(DICTIONARY[3].has(c + "an"));
 });
 
 test("every opening word can be played to a single letter", () => {

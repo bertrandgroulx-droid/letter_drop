@@ -30,9 +30,8 @@ D, add A for AD. The A then falls on its own and the game is over.
 - **1 point** for each different letter you use that was not in the opening
   word. There are three chances to add a letter, so the ceiling is 11.
 
-The on-screen keyboard tracks this while you play. A heavy border means the
-letter is in the opening word and earns no bonus. A filled grey key means you
-have already used it. A green key means it was new, and you scored for it.
+The on-screen keyboard greys out every letter that has appeared, whether it
+came from the opening word or from a word you made. That is its only marking.
 
 ## Playing it
 

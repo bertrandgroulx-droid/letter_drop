@@ -198,8 +198,6 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 .slot.active { border-color: var(--new); border-style: solid; color: var(--new); }
 .slot.active:empty::after { content: "?"; opacity: 0.55; }
 .slot.filled { border-style: solid; border-color: var(--new); color: var(--new); }
-.slot.dead { opacity: 0.35; }
-
 .row.shake { animation: shake 0.3s; }
 
 @keyframes shake {
@@ -213,7 +211,6 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 
 .controls { display: flex; align-items: center; gap: 0.6rem 1rem; flex-wrap: wrap; justify-content: center; }
 #commit { padding: 0.5rem 1.1rem; font-family: var(--font-display); font-weight: 600; }
-.toggle { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--ink-dim); }
 
 /* ---------- result ---------- */
 
@@ -247,27 +244,8 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 }
 
 .key.wide { min-width: clamp(3.2rem, 14vw, 4.5rem); }
-.key.seed { border-color: var(--ink-dim); border-width: 2px; }
-.key.used { background: var(--line); color: var(--ink-dim); }
-.key.scored { background: var(--new); border-color: var(--new); color: #fff; }
-.key.dead { opacity: 0.3; }
+.key.used { background: var(--line); color: var(--ink-dim); border-color: var(--line); }
 
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 1rem;
-  justify-content: center;
-  margin: 0;
-  font-size: 0.78rem;
-  color: var(--ink-dim);
-}
-
-.legend span { display: flex; align-items: center; gap: 0.35rem; }
-
-.swatch { width: 0.85rem; height: 0.85rem; border-radius: 3px; border: 2px solid var(--line); }
-.swatch.seed { border-color: var(--ink-dim); }
-.swatch.scored { background: var(--new); border-color: var(--new); }
-.swatch.used { background: var(--line); }
 
 /* ---------- rules ---------- */
 
@@ -310,17 +288,11 @@ dialog form { text-align: right; }
   <div class="controls">
     <button type="button" id="commit" class="primary" hidden>Make the word</button>
     <button type="button" id="undo" class="ghost">Undo</button>
-    <label class="toggle"><input type="checkbox" id="hints"> Grey out dead letters</label>
   </div>
 </main>
 
 <div class="keyboard" id="keyboard" aria-label="Keyboard"></div>
 
-<p class="legend">
-  <span><i class="swatch seed"></i>in the opening word</span>
-  <span><i class="swatch scored"></i>new letter, worth a point</span>
-  <span><i class="swatch used"></i>already used</span>
-</p>
 
 <dialog id="rules">
   <h2>How to play</h2>
@@ -400,15 +372,6 @@ function nextWords(word, dictionary = DICTIONARY) {
     }
   }
   return [...found].sort();
-}
-
-/** The letters that make a real word when added to `block` on `side`. */
-function playableLetters(block, side, dictionary = DICTIONARY) {
-  const target = dictionary[block.length + 1];
-  if (!target) return new Set();
-  return new Set(
-    [...ALPHABET].filter((c) => target.has(side === "front" ? c + block : block + c))
-  );
 }
 
 function randomSeed(random = Math.random) {
@@ -611,7 +574,6 @@ const els = {
   undo: document.getElementById("undo"),
   commit: document.getElementById("commit"),
   tallyDetail: document.getElementById("tally-detail"),
-  hints: document.getElementById("hints"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
   rules: document.getElementById("rules"),
@@ -686,9 +648,6 @@ function renderSlot(side) {
   slot.className = `tile slot${active ? " active" : ""}${active && game.letter ? " filled" : ""}`;
   slot.setAttribute("aria-label", side === "front" ? "add letter in front" : "add letter behind");
   if (active && game.letter) slot.textContent = game.letter;
-  if (els.hints.checked && playableLetters(game.block, side).size === 0) {
-    slot.classList.add("dead");
-  }
   slot.addEventListener("click", () => {
     game.setSide(side);
     setNote("");
@@ -784,12 +743,12 @@ function render() {
 }
 
 function renderKeyboard() {
-  const seed = new Set(game.seed);
-  const used = new Set(game.rows.slice(1).flatMap((row) => [...row.word]));
-  const scored = new Set(game.newLetters);
-  const live = els.hints.checked && game.phase === "build"
-    ? playableLetters(game.block, game.side)
-    : null;
+  // One state only: the letter has appeared, in the opening word or in a word
+  // the player made.
+  const used = new Set([
+    ...game.seed,
+    ...game.rows.slice(1).flatMap((row) => [...row.word]),
+  ]);
 
   const rows = KEY_ROWS.map((letters, index) => {
     const row = document.createElement("div");
@@ -800,10 +759,7 @@ function renderKeyboard() {
       key.type = "button";
       key.className = "key";
       key.textContent = letter;
-      if (seed.has(letter)) key.classList.add("seed");
       if (used.has(letter)) key.classList.add("used");
-      if (scored.has(letter)) key.classList.add("scored");
-      if (live && !live.has(letter)) key.classList.add("dead");
       key.addEventListener("click", () => typeLetter(letter));
       row.append(key);
     }
@@ -890,10 +846,6 @@ function startNewGame() {
 els.commit.addEventListener("click", onEnter);
 els.undo.addEventListener("click", onBackspace);
 els.newGame.addEventListener("click", startNewGame);
-els.hints.addEventListener("change", () => {
-  store.set("letterdrop.hints", els.hints.checked ? "1" : "0");
-  render();
-});
 els.howTo.addEventListener("click", () => els.rules.showModal());
 
 document.addEventListener("keydown", (event) => {
@@ -916,7 +868,6 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-els.hints.checked = store.get("letterdrop.hints") === "1";
 if (!store.get("letterdrop.seen")) {
   store.set("letterdrop.seen", "1");
   els.rules.showModal();

@@ -1,4 +1,4 @@
-import { Game, playableLetters } from "./game.js";
+import { Game } from "./game.js";
 import { DICTIONARY } from "./words.js";
 
 const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
@@ -10,7 +10,6 @@ const els = {
   undo: document.getElementById("undo"),
   commit: document.getElementById("commit"),
   tallyDetail: document.getElementById("tally-detail"),
-  hints: document.getElementById("hints"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
   rules: document.getElementById("rules"),
@@ -85,9 +84,6 @@ function renderSlot(side) {
   slot.className = `tile slot${active ? " active" : ""}${active && game.letter ? " filled" : ""}`;
   slot.setAttribute("aria-label", side === "front" ? "add letter in front" : "add letter behind");
   if (active && game.letter) slot.textContent = game.letter;
-  if (els.hints.checked && playableLetters(game.block, side).size === 0) {
-    slot.classList.add("dead");
-  }
   slot.addEventListener("click", () => {
     game.setSide(side);
     setNote("");
@@ -183,12 +179,12 @@ function render() {
 }
 
 function renderKeyboard() {
-  const seed = new Set(game.seed);
-  const used = new Set(game.rows.slice(1).flatMap((row) => [...row.word]));
-  const scored = new Set(game.newLetters);
-  const live = els.hints.checked && game.phase === "build"
-    ? playableLetters(game.block, game.side)
-    : null;
+  // One state only: the letter has appeared, in the opening word or in a word
+  // the player made.
+  const used = new Set([
+    ...game.seed,
+    ...game.rows.slice(1).flatMap((row) => [...row.word]),
+  ]);
 
   const rows = KEY_ROWS.map((letters, index) => {
     const row = document.createElement("div");
@@ -199,10 +195,7 @@ function renderKeyboard() {
       key.type = "button";
       key.className = "key";
       key.textContent = letter;
-      if (seed.has(letter)) key.classList.add("seed");
       if (used.has(letter)) key.classList.add("used");
-      if (scored.has(letter)) key.classList.add("scored");
-      if (live && !live.has(letter)) key.classList.add("dead");
       key.addEventListener("click", () => typeLetter(letter));
       row.append(key);
     }
@@ -289,10 +282,6 @@ function startNewGame() {
 els.commit.addEventListener("click", onEnter);
 els.undo.addEventListener("click", onBackspace);
 els.newGame.addEventListener("click", startNewGame);
-els.hints.addEventListener("change", () => {
-  store.set("letterdrop.hints", els.hints.checked ? "1" : "0");
-  render();
-});
 els.howTo.addEventListener("click", () => els.rules.showModal());
 
 document.addEventListener("keydown", (event) => {
@@ -315,7 +304,6 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-els.hints.checked = store.get("letterdrop.hints") === "1";
 if (!store.get("letterdrop.seen")) {
   store.set("letterdrop.seen", "1");
   els.rules.showModal();

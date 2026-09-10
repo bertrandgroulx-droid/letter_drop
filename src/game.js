@@ -35,15 +35,6 @@ export function nextWords(word, dictionary = DICTIONARY) {
   return [...found].sort();
 }
 
-/** The letters that make a real word when added to `block` on `side`. */
-export function playableLetters(block, side, dictionary = DICTIONARY) {
-  const target = dictionary[block.length + 1];
-  if (!target) return new Set();
-  return new Set(
-    [...ALPHABET].filter((c) => target.has(side === "front" ? c + block : block + c))
-  );
-}
-
 export function randomSeed(random = Math.random) {
   return SEED_WORDS[Math.floor(random() * SEED_WORDS.length)];
 }
