@@ -174,3 +174,41 @@ test("every opening word can be played to a single letter", () => {
   const failures = sample.filter((word) => !solve(word));
   assert.deepEqual(failures, [], "unsolvable openers");
 });
+
+test("the per-word breakdown adds up to the score", () => {
+  const game = new Game({ seed: "plant" });
+  [1, 2, 3].forEach((i) => game.toggleSelect(i));
+  game.setLetter("d");
+  game.submit();
+  [0, 1].forEach((i) => game.toggleSelect(i));
+  game.setLetter("d");
+  game.submit();
+  game.toggleSelect(2);
+  game.setSide("front");
+  game.setLetter("a");
+  game.submit();
+
+  assert.deepEqual(game.breakdown, [
+    { word: "land", newLetter: "d", points: 3, max: 3 },
+    { word: "lad", newLetter: null, points: 2, max: 3 },
+    { word: "ad", newLetter: null, points: 2, max: 3 },
+    { word: "a", newLetter: null, points: 2, max: 2 },
+  ]);
+  assert.equal(
+    game.breakdown.reduce((sum, entry) => sum + entry.points, 0),
+    game.score.total
+  );
+});
+
+test("only the word that first brings a letter in scores for it", () => {
+  const game = new Game({ seed: "plant" });
+  [1, 2, 3].forEach((i) => game.toggleSelect(i));
+  game.setLetter("d");
+  game.submit();
+  assert.equal(game.breakdown[0].points, 3, "LAND earns for the D");
+  [1, 2].forEach((i) => game.toggleSelect(i));
+  game.setLetter("e");
+  game.submit();
+  assert.equal(game.breakdown[1].newLetter, "e", "END brings in the E");
+  assert.equal(game.breakdown[1].points, 3);
+});

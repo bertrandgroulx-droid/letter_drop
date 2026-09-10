@@ -126,6 +126,40 @@ h1 {
 
 .tally-detail { font-size: 0.82rem; color: var(--ink-dim); }
 
+.breakdown {
+  list-style: none;
+  margin: 0;
+  padding: 0.55rem 0 0;
+  display: grid;
+  grid-template-columns: auto auto auto;
+  justify-content: start;
+  align-items: center;
+  gap: 0.3rem 0.7rem;
+  font-size: 0.82rem;
+}
+
+.breakdown li { display: contents; }
+
+.bd-word {
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bd-pips { display: flex; gap: 0.22rem; }
+
+.pip {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--new);
+}
+
+.pip.filled { background: var(--new); }
+
+.bd-count { color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+
 button {
   font: inherit;
   cursor: pointer;

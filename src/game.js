@@ -88,6 +88,25 @@ export class Game {
     return [...used].sort();
   }
 
+  /**
+   * What each word you made was worth, and what it could have been worth. Only
+   * the word that first brings a letter in scores for it, and the last letter
+   * falls without adding one, so it can never reach three.
+   */
+  get breakdown() {
+    const seen = new Set(this.seed);
+    return this.rows.slice(1).map((row) => {
+      const fresh = [...row.word].filter((c) => !seen.has(c));
+      fresh.forEach((c) => seen.add(c));
+      return {
+        word: row.word,
+        newLetter: fresh[0] ?? null,
+        points: POINTS_PER_WORD + fresh.length * POINTS_PER_NEW_LETTER,
+        max: POINTS_PER_WORD + (row.added ? POINTS_PER_NEW_LETTER : 0),
+      };
+    });
+  }
+
   get score() {
     return {
       words: this.wordsMade * POINTS_PER_WORD,

@@ -9,6 +9,7 @@ const els = {
   keyboard: document.getElementById("keyboard"),
   undo: document.getElementById("undo"),
   tallyDetail: document.getElementById("tally-detail"),
+  breakdown: document.getElementById("breakdown"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
   rules: document.getElementById("rules"),
@@ -173,6 +174,31 @@ function tallyText() {
   return plural(words, "word") + (fresh ? ` \u00b7 ${plural(fresh, "new letter")}` : "");
 }
 
+function renderBreakdown() {
+  els.breakdown.replaceChildren(...game.breakdown.map((entry) => {
+    const item = document.createElement("li");
+
+    const word = document.createElement("span");
+    word.className = "bd-word";
+    word.textContent = entry.word;
+
+    const pips = document.createElement("span");
+    pips.className = "bd-pips";
+    for (let i = 0; i < entry.max; i += 1) {
+      const pip = document.createElement("i");
+      pip.className = i < entry.points ? "pip filled" : "pip";
+      pips.append(pip);
+    }
+
+    const count = document.createElement("span");
+    count.className = "bd-count";
+    count.textContent = `${entry.points} of ${entry.max}`;
+
+    item.append(word, pips, count);
+    return item;
+  }));
+}
+
 function render() {
   els.board.replaceChildren(
     ...game.rows.map(renderRow),
@@ -184,6 +210,7 @@ function render() {
   els.message.classList.toggle("error", noteIsError);
   els.score.textContent = game.score.total;
   els.tallyDetail.textContent = tallyText();
+  renderBreakdown();
   els.undo.disabled = game.rows.length < 2 && !game.selection.length && game.phase !== "build";
   renderKeyboard();
 }
