@@ -363,6 +363,7 @@ button.lookup:hover { color: var(--new); }
 }
 
 .definition a { color: var(--new); }
+.definition-source { color: var(--ink-dim); font-size: 0.72rem; }
 .result dl { display: grid; grid-template-columns: auto auto; gap: 0.2rem 1.25rem; margin: 0 0 0.75rem; }
 .result dt { color: var(--ink-dim); text-align: left; }
 .result dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }

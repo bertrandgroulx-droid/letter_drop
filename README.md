@@ -60,10 +60,19 @@ can reveal one of the runs that reached it, and you can give up part way
 through to see it early, keeping whatever you have scored so far. Looking
 closes the game either way, so undo cannot walk you back into it with the
 answer in hand. Ties are common, so it is a perfect
-run rather than the perfect run. Tapping a word there fetches its first sense
-from `api.dictionaryapi.dev`, which is the only network call the game makes. It
-is optional and failure is expected: the page falls back to a Wiktionary link
-when the request is blocked or there is no connection. Across the openers
+run rather than the perfect run. Tapping a word there shows its first sense, fetched from Wiktionary's REST
+endpoint, which is the only network call the game makes.
+
+Wiktionary is used because it is the only free source that carries the short
+Scrabble words. Bundling definitions was tried and abandoned: Webster's 1913
+and Wordset each cover only 52% of the game's 14,084 words and both miss AH,
+QI and KOR, which are exactly the words worth looking up. Webster's is also
+archaic enough to define LAND as urine.
+
+Every word in a revealed run is fetched at once, so tapping one is instant
+rather than starting a request. Lookups give up after six seconds, and any
+failure falls back to a Wiktionary link. Definitions arrive as markup and are
+parsed for their text, never inserted as HTML. Across the openers
 it runs from 16 to 20, so `17 of 19` means something a flat maximum would not.
 
 The on-screen keyboard greys out every letter that has appeared, whether it

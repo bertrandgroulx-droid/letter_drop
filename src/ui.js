@@ -30,9 +30,11 @@ let hintsOn = false;
 let definitionFor = null;
 let giveUpArmed = false;
 
-// Free, no key, no sign-up. Blocked outright in some embeddings, which is what
-// the Wiktionary fallback is for.
-const DEFINITION_API = "https://api.dictionaryapi.dev/api/v2/entries/en/";
+// Wikimedia's own endpoint: no key, and the only free source that actually
+// carries the short Scrabble words. Blocked outright in some embeddings, which
+// is what the link fallback is for.
+const DEFINITION_API = "https://en.wiktionary.org/api/rest_v1/page/definition/";
+const LOOKUP_TIMEOUT = 6000;
 const definitions = new Map();
 let note = "";
 let noteIsError = false;
@@ -195,6 +197,7 @@ function renderResult() {
     reveal.textContent = "Show a perfect run";
     reveal.addEventListener("click", () => {
       game.answerShown = true;
+      prefetchDefinitions();
       render();
     });
 
@@ -206,19 +209,60 @@ function renderResult() {
   return box;
 }
 
+/** Wiktionary returns markup, which is read for its text and never inserted. */
+function plainText(html) {
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+  return parsed.body.textContent.replace(/\s+/g, " ").trim();
+}
+
+function shorten(text, limit = 170) {
+  if (text.length <= limit) return text;
+  const cut = text.lastIndexOf(" ", limit);
+  return text.slice(0, cut > 40 ? cut : limit) + "\u2026";
+}
+
+/** The first English sense that has any words in it. */
+function firstSense(data) {
+  for (const section of data?.en ?? []) {
+    for (const item of section.definitions ?? []) {
+      const text = plainText(item.definition ?? "");
+      if (text) {
+        return { part: (section.partOfSpeech ?? "").toLowerCase(), text: shorten(text) };
+      }
+    }
+  }
+  return null;
+}
+
 /** Pull the first sense of a word, or null if we cannot reach a dictionary. */
 async function lookUp(word) {
+  if (definitions.has(word)) return definitions.get(word);
+
   let entry = null;
+  const stop = new AbortController();
+  const timer = setTimeout(() => stop.abort(), LOOKUP_TIMEOUT);
   try {
-    const response = await fetch(DEFINITION_API + encodeURIComponent(word));
-    if (response.ok) {
-      const meaning = (await response.json())?.[0]?.meanings?.[0];
-      const text = meaning?.definitions?.[0]?.definition;
-      if (text) entry = { part: meaning.partOfSpeech ?? "", text };
-    }
-  } catch { /* offline, or the page is not allowed to reach it */ }
+    const response = await fetch(DEFINITION_API + encodeURIComponent(word), {
+      signal: stop.signal,
+    });
+    if (response.ok) entry = firstSense(await response.json());
+  } catch { /* offline, blocked, or too slow to be worth waiting for */ }
+  clearTimeout(timer);
+
   definitions.set(word, entry);
   return entry;
+}
+
+/**
+ * Fetch every word in the revealed run at once, so tapping one is instant
+ * rather than starting a request the player has to wait on.
+ */
+function prefetchDefinitions() {
+  for (const word of [game.seed, ...game.bestRun.line.map((e) => e.word)]) {
+    lookUp(word).then(() => {
+      if (definitionFor === word) render();
+    });
+  }
 }
 
 function showDefinition(word) {
@@ -240,7 +284,7 @@ function renderDefinition() {
   box.append(name, " ");
 
   if (!definitions.has(definitionFor)) {
-    box.append("\u2026");
+    box.append("looking up\u2026");
     return box;
   }
 
@@ -252,6 +296,10 @@ function renderDefinition() {
       box.append(part, " \u00b7 ");
     }
     box.append(entry.text);
+    const source = document.createElement("span");
+    source.className = "definition-source";
+    source.textContent = "Wiktionary";
+    box.append(" ", source);
     return box;
   }
 
@@ -561,6 +609,7 @@ function openRules() {
 function onGiveUp() {
   if (giveUpArmed) {
     game.giveUp();
+    prefetchDefinitions();
     giveUpArmed = false;
   } else {
     giveUpArmed = true;
