@@ -2,10 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   Game,
-  PERFECT_SCORE,
   blocks,
   keepCount,
+  letterValue,
   nextWords,
+  playableLetters,
 } from "../src/game.js";
 import { DICTIONARY, SEED_WORDS } from "../src/words.js";
 
@@ -100,14 +101,29 @@ test("a word not in the list is refused", () => {
   assert.equal(game.phase, "build", "the player stays put and can try again");
 });
 
-test("a clean run scores every point on offer", () => {
+test("a clean run scores the words plus what each letter is worth", () => {
   const game = new Game({ seed: "plant" });
   perfectRun(game);
 
   assert.deepEqual(game.rows.map((r) => r.word), ["plant", "land", "lab", "ah", "a"]);
   assert.equal(game.phase, "won");
   assert.deepEqual(game.newLetters, ["b", "d", "h"]);
-  assert.deepEqual(game.score, { words: 8, letters: 3, penalty: 0, total: PERFECT_SCORE });
+  // Four words at 2, then D and B at 2 each and H at 3.
+  assert.deepEqual(game.score, { words: 8, letters: 7, penalty: 0, total: 15 });
+});
+
+test("letters are worth one, two or three", () => {
+  assert.equal(letterValue("e"), 1, "everyday");
+  assert.equal(letterValue("p"), 2, "awkward");
+  assert.equal(letterValue("z"), 3, "build a word around it");
+  assert.equal([..."abcdefghijklmnopqrstuvwxyz"].filter((c) => !letterValue(c)).length, 0);
+});
+
+test("the ceiling is worked out per deal, and no run can beat it", () => {
+  const game = new Game({ seed: "plant" });
+  perfectRun(game);
+  assert.ok(game.bestPossible >= game.score.total, "a real run cannot exceed the ceiling");
+  assert.ok(game.bestPossible <= 17, "three words plus the fall, all letters worth three");
 });
 
 test("the last letter falls on its own", () => {
@@ -137,7 +153,7 @@ test("undo steps back past the letter that fell on its own", () => {
 test("undo costs a point once there is a word to take back", () => {
   const game = new Game({ seed: "plant" });
   play(game, [1, 2, 3], "d");
-  assert.equal(game.score.total, 3);
+  assert.equal(game.score.total, 4, "two for LAND and two for the D");
 
   game.undo();
   assert.equal(game.currentWord, "plant");
@@ -146,7 +162,7 @@ test("undo costs a point once there is a word to take back", () => {
   assert.equal(game.score.total, 0, "the score never goes below zero");
 
   play(game, [1, 2, 3], "d");
-  assert.equal(game.score.total, 2, "three points for LAND, less the undo");
+  assert.equal(game.score.total, 3, "four points for LAND, less the undo");
 });
 
 test("backing out of a split you have not committed is free", () => {
@@ -170,9 +186,9 @@ test("the per-word breakdown adds up to the score", () => {
   const game = new Game({ seed: "plant" });
   perfectRun(game);
   assert.deepEqual(game.breakdown, [
-    { word: "land", newLetter: "d", points: 3 },
-    { word: "lab", newLetter: "b", points: 3 },
-    { word: "ah", newLetter: "h", points: 3 },
+    { word: "land", newLetter: "d", points: 4 },
+    { word: "lab", newLetter: "b", points: 4 },
+    { word: "ah", newLetter: "h", points: 5 },
     { word: "a", newLetter: null, points: 2 },
   ]);
   assert.equal(
@@ -181,8 +197,19 @@ test("the per-word breakdown adds up to the score", () => {
   );
 });
 
-test("a perfect game is every word plus every new letter", () => {
-  assert.equal(PERFECT_SCORE, 11);
+test("hint mode marks the run and is off to begin with", () => {
+  const game = new Game({ seed: "plant" });
+  assert.equal(game.hintsUsed, false);
+});
+
+test("hint letters make real words and are never already used", () => {
+  const game = new Game({ seed: "plant" });
+  [1, 2, 3].forEach((i) => game.toggleSelect(i));
+  const live = playableLetters("lan", "end", game.dictionary, game.usedLetters);
+  assert.ok(live.has("d"), "LAND");
+  assert.ok(!live.has("t"), "T is already on the board, so LANT is not offered");
+  assert.ok(!live.has("q"));
+  for (const c of live) assert.ok(game.dictionary[4].has("lan" + c));
 });
 
 test("every opening word can be played to a single letter without reusing one", () => {

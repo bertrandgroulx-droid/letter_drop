@@ -184,6 +184,8 @@ button:hover:not(:disabled) { border-color: var(--ink-dim); }
 button:disabled { opacity: 0.4; cursor: default; }
 button.primary { background: var(--new); border-color: var(--new); color: #fff; font-weight: 600; }
 .ghost { font-size: 0.85rem; }
+.ghost.on { background: var(--new); border-color: var(--new); color: #fff; }
+.ghost.on:hover { border-color: var(--new); }
 
 /* ---------- board ---------- */
 
@@ -306,6 +308,8 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 
 .result h2 { margin: 0 0 0.5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
 .result-actions { display: flex; gap: 0.5rem; justify-content: center; }
+.ceiling { margin: 0 0 0.75rem; font-size: 0.82rem; color: var(--ink-dim); }
+.practice { margin: 0 0 0.75rem; font-size: 0.85rem; color: var(--keep); }
 .result dl { display: grid; grid-template-columns: auto auto; gap: 0.2rem 1.25rem; margin: 0 0 0.75rem; }
 .result dt { color: var(--ink-dim); text-align: left; }
 .result dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
@@ -330,6 +334,7 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 .kb-row { display: flex; gap: 0.3rem; }
 
 .key {
+  position: relative;
   min-width: clamp(1.7rem, 8.2vw, 2.5rem);
   height: clamp(2.6rem, 11vw, 3.2rem);
   padding: 0 0.25rem;
@@ -340,6 +345,21 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 }
 
 .key.wide { min-width: clamp(3.2rem, 14vw, 4.5rem); }
+
+/* What the letter is worth, sitting in the corner the way a Scrabble tile
+   carries its value. */
+.key[data-value]::after {
+  content: attr(data-value);
+  position: absolute;
+  right: 0.15rem;
+  bottom: 0.02rem;
+  font-size: 0.52rem;
+  font-weight: 700;
+  opacity: 0.5;
+}
+
+/* Hints on: this letter makes a word from here. */
+.key.playable { box-shadow: inset 0 0 0 2px var(--new); }
 .key.used { background: var(--line); color: var(--ink-dim); border-color: var(--line); opacity: 1; }
 
 
@@ -369,6 +389,7 @@ dialog form { text-align: right; }
 <header class="bar">
   <h1>Letter&nbsp;Drop</h1>
   <div class="bar-right">
+    <button type="button" id="hints" class="ghost" aria-pressed="false">Hints</button>
     <button type="button" id="how-to" class="ghost">How to play</button>
     <button type="button" id="new-game" class="ghost">New game</button>
   </div>
@@ -426,15 +447,23 @@ dialog form { text-align: right; }
   <h3>Scoring</h3>
   <ul>
     <li><b>2 points</b> for every word you make.</li>
-    <li><b>1 point</b> for the letter it brings in. The last letter falls
+    <li><b>1, 2 or 3 points</b> for the letter it brings in, depending on how
+        awkward that letter is to use. The small number in the corner of each
+        key says which, the way a Scrabble tile does. The last letter falls
         without adding one, so that round is worth 2.</li>
     <li><b>Undo costs 1 point</b> once there is a word to take back. Backing out
         of a split you have not committed is free, and your score never goes
         below zero.</li>
   </ul>
-  <p class="max">A clean run with no undos is 11 points. Every opening word can
-     be played all the way down, but a bad split can leave you with nothing to
-     make, and then only Undo will save you.</p>
+  <p class="max">Every deal has its own best possible score, and you are shown
+     it when you finish. Reaching it means going after the awkward letters
+     rather than the easy ones. A bad split can also leave you with nothing to
+     make at all, and then only Undo will save you.</p>
+
+  <h3>Hints</h3>
+  <p>Turn <b>Hints</b> on and every letter that makes a word from where you
+     stand gets a green ring. It is there to learn with, so a run played with
+     hints on counts as practice and cannot be shared.</p>
 
   <form method="dialog"><button class="primary">Got it</button></form>
 </dialog>
@@ -466,14 +495,25 @@ const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
 const SINGLE_LETTER_WORDS = ["a", "i"];
 
 const POINTS_PER_WORD = 2;
-const POINTS_PER_NEW_LETTER = 1;
 const UNDO_COST = 1;
 
 const NOTHING_USED = new Set();
 
-/** Three rounds that can bring in a letter, then the last letter falling. */
-const PERFECT_SCORE =
-  3 * (POINTS_PER_WORD + POINTS_PER_NEW_LETTER) + POINTS_PER_WORD;
+/**
+ * What a letter is worth when you bring it in, banded from Scrabble tile
+ * values: the everyday letters, the awkward ones, and the ones you have to
+ * build a word around.
+ */
+const LETTER_VALUES = Object.fromEntries([
+  ...[..."aeilnorstu"].map((c) => [c, 1]),
+  ...[..."dgbcmp"].map((c) => [c, 2]),
+  ...[..."fhvwykjxqz"].map((c) => [c, 3]),
+]);
+
+function letterValue(letter) {
+  return LETTER_VALUES[letter] ?? 0;
+}
+
 
 /** How many letters carry over from a word of this length into the next round. */
 function keepCount(length) {
@@ -512,6 +552,26 @@ function randomSeed(random = Math.random) {
   return SEED_WORDS[Math.floor(random() * SEED_WORDS.length)];
 }
 
+/** The letters that make a real word when added to `block` on `side`. */
+function playableLetters(block, side, dictionary = DICTIONARY, used = NOTHING_USED) {
+  const target = dictionary[block.length + 1];
+  if (!target) return new Set();
+  return new Set([...ALPHABET].filter(
+    (c) => !used.has(c) && target.has(side === "front" ? c + block : block + c)
+  ));
+}
+
+/** The most any run from this position could score. */
+function bestFrom(word, used, dictionary) {
+  let best = 0;
+  for (const next of nextWords(word, dictionary, used)) {
+    const added = [...next].find((c) => !used.has(c));
+    const gain = POINTS_PER_WORD + (added ? letterValue(added) : 0);
+    best = Math.max(best, gain + bestFrom(next, new Set([...used, ...next]), dictionary));
+  }
+  return best;
+}
+
 /**
  * One puzzle. `rows` is the chain of words built so far, oldest first. Each row
  * records how it was made (`added`) and which of its letters drop into the next
@@ -528,6 +588,8 @@ class Game {
     this.letter = "";
     this.phase = "select";
     this.undos = 0;
+    this.hintsUsed = false;
+    this.best = null;
     this.refreshPhase();
   }
 
@@ -584,14 +646,26 @@ class Game {
       return {
         word: row.word,
         newLetter: fresh[0] ?? null,
-        points: POINTS_PER_WORD + fresh.length * POINTS_PER_NEW_LETTER,
+        points: POINTS_PER_WORD + (fresh.length ? letterValue(fresh[0]) : 0),
       };
     });
   }
 
+  /**
+   * The best this particular deal was ever worth, which is what the final
+   * score is measured against. Takes a few milliseconds, so it waits until
+   * something asks, which is the end of the game.
+   */
+  get bestPossible() {
+    if (this.best === null) {
+      this.best = bestFrom(this.seed, new Set(this.seed), this.dictionary);
+    }
+    return this.best;
+  }
+
   get score() {
     const words = this.wordsMade * POINTS_PER_WORD;
-    const letters = this.newLetters.length * POINTS_PER_NEW_LETTER;
+    const letters = this.newLetters.reduce((sum, c) => sum + letterValue(c), 0);
     const penalty = this.undos * UNDO_COST;
     return { words, letters, penalty, total: Math.max(0, words + letters - penalty) };
   }
@@ -750,6 +824,7 @@ const els = {
   undo: document.getElementById("undo"),
   tallyDetail: document.getElementById("tally-detail"),
   breakdown: document.getElementById("breakdown"),
+  hints: document.getElementById("hints"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
   rules: document.getElementById("rules"),
@@ -763,6 +838,7 @@ function requestedSeed() {
 
 let game = new Game({ seed: requestedSeed() });
 let landingFrom = 0;
+let hintsOn = false;
 let note = "";
 let noteIsError = false;
 
@@ -881,20 +957,31 @@ function renderResult() {
       <dt>New letters: ${newLetters}</dt><dd>${letters}</dd>
       ${undoRow}
       <dt class="total">Total</dt><dd class="total">${total}</dd>
-    </dl>`;
-  const share = document.createElement("button");
-  share.className = "primary";
-  share.textContent = "Share";
-  share.addEventListener("click", () => shareResult(share, box));
-
+    </dl>
+    <p class="ceiling">The best this word was worth: ${game.bestPossible}</p>`;
   const again = document.createElement("button");
-  again.className = "ghost";
   again.textContent = "New game";
   again.addEventListener("click", startNewGame);
 
   const actions = document.createElement("div");
   actions.className = "result-actions";
-  actions.append(share, again);
+
+  if (game.hintsUsed) {
+    again.className = "primary";
+    const note = document.createElement("p");
+    note.className = "practice";
+    note.textContent = "Hints were on, so this one is practice and cannot be shared.";
+    box.append(note);
+    actions.append(again);
+  } else {
+    const share = document.createElement("button");
+    share.className = "primary";
+    share.textContent = "Share";
+    share.addEventListener("click", () => shareResult(share, box));
+    again.className = "ghost";
+    actions.append(share, again);
+  }
+
   box.append(actions);
   return box;
 }
@@ -910,16 +997,17 @@ function shareText() {
     const added = row.added
       ? (row.added.side === "front" ? 0 : row.word.length - 1)
       : -1;
-    return [...row.word]
+    const squares = [...row.word]
       .map((_, i) => (i === added ? (entry.newLetter ? "\u{1F7E9}" : "\u2B1C") : "\u{1F7E7}"))
       .join("");
+    return `${squares} ${entry.points}`;
   });
   if (game.undos) rows.push(`${game.undos} undo${game.undos === 1 ? "" : "s"}`);
 
   const link = `${location.origin}${location.pathname}?word=${game.seed}`;
   return [
     `Letter Drop \u00b7 ${game.seed.toUpperCase()}`,
-    `${game.score.total} of ${PERFECT_SCORE}`,
+    `${game.score.total} of ${game.bestPossible}`,
     "",
     ...rows,
     "",
@@ -979,10 +1067,11 @@ function defaultNote() {
 
 function tallyText() {
   const words = game.wordsMade;
-  if (!words) return "no words yet";
+  if (!words) return game.hintsUsed ? "practice run" : "no words yet";
   const fresh = game.newLetters.length;
   const plural = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
-  return plural(words, "word") + (fresh ? ` \u00b7 ${plural(fresh, "new letter")}` : "");
+  const line = plural(words, "word") + (fresh ? ` \u00b7 ${plural(fresh, "new letter")}` : "");
+  return game.hintsUsed ? `${line} \u00b7 practice` : line;
 }
 
 function renderBreakdown() {
@@ -1023,16 +1112,19 @@ function render() {
   const undoCosts = game.rows.length > 1 && !game.selection.length && game.phase !== "build";
   els.undo.disabled = !undoCosts && !game.selection.length && game.phase !== "build";
   els.undo.textContent = undoCosts ? `Undo \u2212${UNDO_COST}` : "Undo";
+  els.hints.textContent = hintsOn ? "Hints on" : "Hints";
+  els.hints.classList.toggle("on", hintsOn);
+  els.hints.setAttribute("aria-pressed", String(hintsOn));
   renderKeyboard();
 }
 
 function renderKeyboard() {
   // One state only: the letter has appeared, in the opening word or in a word
   // the player made.
-  const used = new Set([
-    ...game.seed,
-    ...game.rows.slice(1).flatMap((row) => [...row.word]),
-  ]);
+  const used = game.usedLetters;
+  const live = hintsOn && game.phase === "build"
+    ? playableLetters(game.block, game.side, game.dictionary, used)
+    : null;
 
   const rows = KEY_ROWS.map((letters, index) => {
     const row = document.createElement("div");
@@ -1043,6 +1135,8 @@ function renderKeyboard() {
       key.type = "button";
       key.className = "key";
       key.textContent = letter;
+      key.dataset.value = letterValue(letter);
+      if (live?.has(letter)) key.classList.add("playable");
       if (used.has(letter)) {
         key.classList.add("used");
         key.disabled = true;  // a letter already on the board cannot be added again
@@ -1124,11 +1218,20 @@ function openRules() {
   els.rules.scrollTop = 0;
 }
 
+function toggleHints() {
+  hintsOn = !hintsOn;
+  // Turning hints on marks this run as practice for good, even if you turn
+  // them off again.
+  if (hintsOn) game.hintsUsed = true;
+  render();
+}
+
 function startNewGame() {
   try {
     history.replaceState(null, "", location.pathname);
   } catch { /* sandboxed frames refuse history writes */ }
   game = new Game();
+  game.hintsUsed = hintsOn;
   landingFrom = 0;
   setNote("");
   render();
@@ -1138,6 +1241,7 @@ function startNewGame() {
 
 els.undo.addEventListener("click", onBackspace);
 els.newGame.addEventListener("click", startNewGame);
+els.hints.addEventListener("click", toggleHints);
 els.howTo.addEventListener("click", openRules);
 
 document.addEventListener("keydown", (event) => {

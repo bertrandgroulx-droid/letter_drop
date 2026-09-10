@@ -1,4 +1,4 @@
-import { Game, PERFECT_SCORE, UNDO_COST } from "./game.js";
+import { Game, UNDO_COST, letterValue, playableLetters } from "./game.js";
 import { DICTIONARY } from "./words.js";
 
 const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
@@ -10,6 +10,7 @@ const els = {
   undo: document.getElementById("undo"),
   tallyDetail: document.getElementById("tally-detail"),
   breakdown: document.getElementById("breakdown"),
+  hints: document.getElementById("hints"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
   rules: document.getElementById("rules"),
@@ -23,6 +24,7 @@ function requestedSeed() {
 
 let game = new Game({ seed: requestedSeed() });
 let landingFrom = 0;
+let hintsOn = false;
 let note = "";
 let noteIsError = false;
 
@@ -141,20 +143,31 @@ function renderResult() {
       <dt>New letters: ${newLetters}</dt><dd>${letters}</dd>
       ${undoRow}
       <dt class="total">Total</dt><dd class="total">${total}</dd>
-    </dl>`;
-  const share = document.createElement("button");
-  share.className = "primary";
-  share.textContent = "Share";
-  share.addEventListener("click", () => shareResult(share, box));
-
+    </dl>
+    <p class="ceiling">The best this word was worth: ${game.bestPossible}</p>`;
   const again = document.createElement("button");
-  again.className = "ghost";
   again.textContent = "New game";
   again.addEventListener("click", startNewGame);
 
   const actions = document.createElement("div");
   actions.className = "result-actions";
-  actions.append(share, again);
+
+  if (game.hintsUsed) {
+    again.className = "primary";
+    const note = document.createElement("p");
+    note.className = "practice";
+    note.textContent = "Hints were on, so this one is practice and cannot be shared.";
+    box.append(note);
+    actions.append(again);
+  } else {
+    const share = document.createElement("button");
+    share.className = "primary";
+    share.textContent = "Share";
+    share.addEventListener("click", () => shareResult(share, box));
+    again.className = "ghost";
+    actions.append(share, again);
+  }
+
   box.append(actions);
   return box;
 }
@@ -170,16 +183,17 @@ function shareText() {
     const added = row.added
       ? (row.added.side === "front" ? 0 : row.word.length - 1)
       : -1;
-    return [...row.word]
+    const squares = [...row.word]
       .map((_, i) => (i === added ? (entry.newLetter ? "\u{1F7E9}" : "\u2B1C") : "\u{1F7E7}"))
       .join("");
+    return `${squares} ${entry.points}`;
   });
   if (game.undos) rows.push(`${game.undos} undo${game.undos === 1 ? "" : "s"}`);
 
   const link = `${location.origin}${location.pathname}?word=${game.seed}`;
   return [
     `Letter Drop \u00b7 ${game.seed.toUpperCase()}`,
-    `${game.score.total} of ${PERFECT_SCORE}`,
+    `${game.score.total} of ${game.bestPossible}`,
     "",
     ...rows,
     "",
@@ -239,10 +253,11 @@ function defaultNote() {
 
 function tallyText() {
   const words = game.wordsMade;
-  if (!words) return "no words yet";
+  if (!words) return game.hintsUsed ? "practice run" : "no words yet";
   const fresh = game.newLetters.length;
   const plural = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
-  return plural(words, "word") + (fresh ? ` \u00b7 ${plural(fresh, "new letter")}` : "");
+  const line = plural(words, "word") + (fresh ? ` \u00b7 ${plural(fresh, "new letter")}` : "");
+  return game.hintsUsed ? `${line} \u00b7 practice` : line;
 }
 
 function renderBreakdown() {
@@ -283,16 +298,19 @@ function render() {
   const undoCosts = game.rows.length > 1 && !game.selection.length && game.phase !== "build";
   els.undo.disabled = !undoCosts && !game.selection.length && game.phase !== "build";
   els.undo.textContent = undoCosts ? `Undo \u2212${UNDO_COST}` : "Undo";
+  els.hints.textContent = hintsOn ? "Hints on" : "Hints";
+  els.hints.classList.toggle("on", hintsOn);
+  els.hints.setAttribute("aria-pressed", String(hintsOn));
   renderKeyboard();
 }
 
 function renderKeyboard() {
   // One state only: the letter has appeared, in the opening word or in a word
   // the player made.
-  const used = new Set([
-    ...game.seed,
-    ...game.rows.slice(1).flatMap((row) => [...row.word]),
-  ]);
+  const used = game.usedLetters;
+  const live = hintsOn && game.phase === "build"
+    ? playableLetters(game.block, game.side, game.dictionary, used)
+    : null;
 
   const rows = KEY_ROWS.map((letters, index) => {
     const row = document.createElement("div");
@@ -303,6 +321,8 @@ function renderKeyboard() {
       key.type = "button";
       key.className = "key";
       key.textContent = letter;
+      key.dataset.value = letterValue(letter);
+      if (live?.has(letter)) key.classList.add("playable");
       if (used.has(letter)) {
         key.classList.add("used");
         key.disabled = true;  // a letter already on the board cannot be added again
@@ -384,11 +404,20 @@ function openRules() {
   els.rules.scrollTop = 0;
 }
 
+function toggleHints() {
+  hintsOn = !hintsOn;
+  // Turning hints on marks this run as practice for good, even if you turn
+  // them off again.
+  if (hintsOn) game.hintsUsed = true;
+  render();
+}
+
 function startNewGame() {
   try {
     history.replaceState(null, "", location.pathname);
   } catch { /* sandboxed frames refuse history writes */ }
   game = new Game();
+  game.hintsUsed = hintsOn;
   landingFrom = 0;
   setNote("");
   render();
@@ -398,6 +427,7 @@ function startNewGame() {
 
 els.undo.addEventListener("click", onBackspace);
 els.newGame.addEventListener("click", startNewGame);
+els.hints.addEventListener("click", toggleHints);
 els.howTo.addEventListener("click", openRules);
 
 document.addEventListener("keydown", (event) => {

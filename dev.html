@@ -22,6 +22,7 @@
 <header class="bar">
   <h1>Letter&nbsp;Drop</h1>
   <div class="bar-right">
+    <button type="button" id="hints" class="ghost" aria-pressed="false">Hints</button>
     <button type="button" id="how-to" class="ghost">How to play</button>
     <button type="button" id="new-game" class="ghost">New game</button>
   </div>
@@ -79,15 +80,23 @@
   <h3>Scoring</h3>
   <ul>
     <li><b>2 points</b> for every word you make.</li>
-    <li><b>1 point</b> for the letter it brings in. The last letter falls
+    <li><b>1, 2 or 3 points</b> for the letter it brings in, depending on how
+        awkward that letter is to use. The small number in the corner of each
+        key says which, the way a Scrabble tile does. The last letter falls
         without adding one, so that round is worth 2.</li>
     <li><b>Undo costs 1 point</b> once there is a word to take back. Backing out
         of a split you have not committed is free, and your score never goes
         below zero.</li>
   </ul>
-  <p class="max">A clean run with no undos is 11 points. Every opening word can
-     be played all the way down, but a bad split can leave you with nothing to
-     make, and then only Undo will save you.</p>
+  <p class="max">Every deal has its own best possible score, and you are shown
+     it when you finish. Reaching it means going after the awkward letters
+     rather than the easy ones. A bad split can also leave you with nothing to
+     make at all, and then only Undo will save you.</p>
+
+  <h3>Hints</h3>
+  <p>Turn <b>Hints</b> on and every letter that makes a word from where you
+     stand gets a green ring. It is there to learn with, so a run played with
+     hints on counts as practice and cannot be shared.</p>
 
   <form method="dialog"><button class="primary">Got it</button></form>
 </dialog>

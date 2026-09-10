@@ -31,16 +31,28 @@ spends D, B, and H, and scores the full 11.
 ## Scoring
 
 - **2 points** for every word you make. The opening word is dealt, not earned,
-  so a clean run to a single letter is 8 points.
-- **1 point** for the new letter each word brings in. There are three chances to
-  add a letter, so the ceiling is 11.
+  so four words is 8 points.
+- **1, 2 or 3 points** for the letter each word brings in, banded from Scrabble
+  tile values. The everyday letters `aeilnorstu` pay 1, the awkward `dgbcmp` pay
+  2, and `fhvwykjxqz` pay 3. Each key carries its value in the corner.
 - **Undo costs 1 point**, once there is a committed word to take back. Backing
-  out of a split you have not committed yet is free.
+  out of a split you have not committed yet is free. The total never goes below
+  zero.
+
+Every deal has its own ceiling, worked out by searching all of its solutions,
+and it is shown when you finish. Across the openers it runs from 13 to 17, so
+`14 of 16` means something a flat maximum would not.
 
 The on-screen keyboard greys out every letter that has appeared, whether it
 came from the opening word or from a word you made. Those keys are also
-disabled, because a spent letter can never be played again. That is its only
-marking.
+disabled, because a spent letter can never be played again.
+
+## Hints
+
+Hints ring every letter that makes a word from the current position. It exists
+for people learning the game, so a run played with hints on is marked as
+practice and its Share button is withheld. Turning hints off again does not
+clear the mark.
 
 ## Playing it
 

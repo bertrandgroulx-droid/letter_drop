@@ -179,6 +179,8 @@ button:hover:not(:disabled) { border-color: var(--ink-dim); }
 button:disabled { opacity: 0.4; cursor: default; }
 button.primary { background: var(--new); border-color: var(--new); color: #fff; font-weight: 600; }
 .ghost { font-size: 0.85rem; }
+.ghost.on { background: var(--new); border-color: var(--new); color: #fff; }
+.ghost.on:hover { border-color: var(--new); }
 
 /* ---------- board ---------- */
 
@@ -301,6 +303,8 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 
 .result h2 { margin: 0 0 0.5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
 .result-actions { display: flex; gap: 0.5rem; justify-content: center; }
+.ceiling { margin: 0 0 0.75rem; font-size: 0.82rem; color: var(--ink-dim); }
+.practice { margin: 0 0 0.75rem; font-size: 0.85rem; color: var(--keep); }
 .result dl { display: grid; grid-template-columns: auto auto; gap: 0.2rem 1.25rem; margin: 0 0 0.75rem; }
 .result dt { color: var(--ink-dim); text-align: left; }
 .result dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
@@ -325,6 +329,7 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 .kb-row { display: flex; gap: 0.3rem; }
 
 .key {
+  position: relative;
   min-width: clamp(1.7rem, 8.2vw, 2.5rem);
   height: clamp(2.6rem, 11vw, 3.2rem);
   padding: 0 0.25rem;
@@ -335,6 +340,21 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 }
 
 .key.wide { min-width: clamp(3.2rem, 14vw, 4.5rem); }
+
+/* What the letter is worth, sitting in the corner the way a Scrabble tile
+   carries its value. */
+.key[data-value]::after {
+  content: attr(data-value);
+  position: absolute;
+  right: 0.15rem;
+  bottom: 0.02rem;
+  font-size: 0.52rem;
+  font-weight: 700;
+  opacity: 0.5;
+}
+
+/* Hints on: this letter makes a word from here. */
+.key.playable { box-shadow: inset 0 0 0 2px var(--new); }
 .key.used { background: var(--line); color: var(--ink-dim); border-color: var(--line); opacity: 1; }
 
 

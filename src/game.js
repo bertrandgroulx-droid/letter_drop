@@ -4,14 +4,25 @@ const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
 const SINGLE_LETTER_WORDS = ["a", "i"];
 
 export const POINTS_PER_WORD = 2;
-export const POINTS_PER_NEW_LETTER = 1;
 export const UNDO_COST = 1;
 
 const NOTHING_USED = new Set();
 
-/** Three rounds that can bring in a letter, then the last letter falling. */
-export const PERFECT_SCORE =
-  3 * (POINTS_PER_WORD + POINTS_PER_NEW_LETTER) + POINTS_PER_WORD;
+/**
+ * What a letter is worth when you bring it in, banded from Scrabble tile
+ * values: the everyday letters, the awkward ones, and the ones you have to
+ * build a word around.
+ */
+export const LETTER_VALUES = Object.fromEntries([
+  ...[..."aeilnorstu"].map((c) => [c, 1]),
+  ...[..."dgbcmp"].map((c) => [c, 2]),
+  ...[..."fhvwykjxqz"].map((c) => [c, 3]),
+]);
+
+export function letterValue(letter) {
+  return LETTER_VALUES[letter] ?? 0;
+}
+
 
 /** How many letters carry over from a word of this length into the next round. */
 export function keepCount(length) {
@@ -50,6 +61,26 @@ export function randomSeed(random = Math.random) {
   return SEED_WORDS[Math.floor(random() * SEED_WORDS.length)];
 }
 
+/** The letters that make a real word when added to `block` on `side`. */
+export function playableLetters(block, side, dictionary = DICTIONARY, used = NOTHING_USED) {
+  const target = dictionary[block.length + 1];
+  if (!target) return new Set();
+  return new Set([...ALPHABET].filter(
+    (c) => !used.has(c) && target.has(side === "front" ? c + block : block + c)
+  ));
+}
+
+/** The most any run from this position could score. */
+function bestFrom(word, used, dictionary) {
+  let best = 0;
+  for (const next of nextWords(word, dictionary, used)) {
+    const added = [...next].find((c) => !used.has(c));
+    const gain = POINTS_PER_WORD + (added ? letterValue(added) : 0);
+    best = Math.max(best, gain + bestFrom(next, new Set([...used, ...next]), dictionary));
+  }
+  return best;
+}
+
 /**
  * One puzzle. `rows` is the chain of words built so far, oldest first. Each row
  * records how it was made (`added`) and which of its letters drop into the next
@@ -66,6 +97,8 @@ export class Game {
     this.letter = "";
     this.phase = "select";
     this.undos = 0;
+    this.hintsUsed = false;
+    this.best = null;
     this.refreshPhase();
   }
 
@@ -122,14 +155,26 @@ export class Game {
       return {
         word: row.word,
         newLetter: fresh[0] ?? null,
-        points: POINTS_PER_WORD + fresh.length * POINTS_PER_NEW_LETTER,
+        points: POINTS_PER_WORD + (fresh.length ? letterValue(fresh[0]) : 0),
       };
     });
   }
 
+  /**
+   * The best this particular deal was ever worth, which is what the final
+   * score is measured against. Takes a few milliseconds, so it waits until
+   * something asks, which is the end of the game.
+   */
+  get bestPossible() {
+    if (this.best === null) {
+      this.best = bestFrom(this.seed, new Set(this.seed), this.dictionary);
+    }
+    return this.best;
+  }
+
   get score() {
     const words = this.wordsMade * POINTS_PER_WORD;
-    const letters = this.newLetters.length * POINTS_PER_NEW_LETTER;
+    const letters = this.newLetters.reduce((sum, c) => sum + letterValue(c), 0);
     const penalty = this.undos * UNDO_COST;
     return { words, letters, penalty, total: Math.max(0, words + letters - penalty) };
   }
