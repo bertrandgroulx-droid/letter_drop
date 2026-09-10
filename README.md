@@ -35,13 +35,18 @@ spends D, B, and H, and scores the full 11.
 - **1, 2 or 3 points** for the letter each word brings in, banded from Scrabble
   tile values. The everyday letters `aeilnorstu` pay 1, the awkward `dgbcmp` pay
   2, and `fhvwykjxqz` pay 3. Each key carries its value in the corner.
+- **3 points** for reaching a single letter. Without it, stalling on a
+  two-letter word holding no A or I costs nothing on about a third of deals,
+  because a 3-point letter the round before covers what the fall would have
+  paid. The bonus also means the greedy play of always grabbing the most
+  expensive letter is wrong about half the time, since it stalls out.
 - **Undo costs 1 point**, once there is a committed word to take back. Backing
   out of a split you have not committed yet is free. The total never goes below
   zero.
 
 Every deal has its own ceiling, worked out by searching all of its solutions,
-and it is shown when you finish. Across the openers it runs from 13 to 17, so
-`14 of 16` means something a flat maximum would not.
+and it sits beside your running score from the first move. Across the openers
+it runs from 16 to 20, so `17 of 19` means something a flat maximum would not.
 
 The on-screen keyboard greys out every letter that has appeared, whether it
 came from the opening word or from a word you made. Those keys are also

@@ -6,6 +6,14 @@ const SINGLE_LETTER_WORDS = ["a", "i"];
 export const POINTS_PER_WORD = 2;
 export const UNDO_COST = 1;
 
+/**
+ * For getting all the way down to a single letter. Without it, stalling on a
+ * two-letter word that holds no A or I costs nothing on about a third of
+ * deals, because a three-point letter the round before covers the two points
+ * the fall would have paid.
+ */
+export const FINISH_BONUS = 3;
+
 const NOTHING_USED = new Set();
 
 /**
@@ -70,9 +78,10 @@ export function playableLetters(block, side, dictionary = DICTIONARY, used = NOT
   ));
 }
 
-/** The most any run from this position could score. */
+/** The most any run from this position could score, the finish included. */
 function bestFrom(word, used, dictionary) {
-  let best = 0;
+  if (word.length === 1) return FINISH_BONUS;
+  let best = 0;  // stalling here and now, which scores nothing further
   for (const next of nextWords(word, dictionary, used)) {
     const added = [...next].find((c) => !used.has(c));
     const gain = POINTS_PER_WORD + (added ? letterValue(added) : 0);
@@ -175,8 +184,15 @@ export class Game {
   get score() {
     const words = this.wordsMade * POINTS_PER_WORD;
     const letters = this.newLetters.reduce((sum, c) => sum + letterValue(c), 0);
+    const bonus = this.phase === "won" ? FINISH_BONUS : 0;
     const penalty = this.undos * UNDO_COST;
-    return { words, letters, penalty, total: Math.max(0, words + letters - penalty) };
+    return {
+      words,
+      letters,
+      bonus,
+      penalty,
+      total: Math.max(0, words + letters + bonus - penalty),
+    };
   }
 
   /** Decide what the player can do from the word now on the board. */

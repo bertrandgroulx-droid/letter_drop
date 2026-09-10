@@ -128,6 +128,7 @@ h1 {
 
 .tally-label {
   font-size: 0.66rem;
+  white-space: nowrap;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-dim);
@@ -308,7 +309,6 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 
 .result h2 { margin: 0 0 0.5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
 .result-actions { display: flex; gap: 0.5rem; justify-content: center; }
-.ceiling { margin: 0 0 0.75rem; font-size: 0.82rem; color: var(--ink-dim); }
 .practice { margin: 0 0 0.75rem; font-size: 0.85rem; color: var(--keep); }
 .result dl { display: grid; grid-template-columns: auto auto; gap: 0.2rem 1.25rem; margin: 0 0 0.75rem; }
 .result dt { color: var(--ink-dim); text-align: left; }
@@ -398,7 +398,7 @@ dialog form { text-align: right; }
 <div class="tally">
   <output class="tally-score" id="score" aria-live="polite">0</output>
   <div class="tally-lines">
-    <span class="tally-label">points</span>
+    <span class="tally-label" id="tally-label">points</span>
     <span class="tally-detail" id="tally-detail">no words yet</span>
   </div>
 </div>
@@ -451,12 +451,15 @@ dialog form { text-align: right; }
         awkward that letter is to use. The small number in the corner of each
         key says which, the way a Scrabble tile does. The last letter falls
         without adding one, so that round is worth 2.</li>
+    <li><b>3 points</b> for getting all the way down to a single letter. Stop
+        short and you lose them, so the expensive letter is not always worth
+        taking.</li>
     <li><b>Undo costs 1 point</b> once there is a word to take back. Backing out
         of a split you have not committed is free, and your score never goes
         below zero.</li>
   </ul>
-  <p class="max">Every deal has its own best possible score, and you are shown
-     it when you finish. Reaching it means going after the awkward letters
+  <p class="max">Every deal has its own best possible score, shown beside your
+     running total from the start. Reaching it means going after the awkward letters
      rather than the easy ones. A bad split can also leave you with nothing to
      make at all, and then only Undo will save you.</p>
 
@@ -496,6 +499,14 @@ const SINGLE_LETTER_WORDS = ["a", "i"];
 
 const POINTS_PER_WORD = 2;
 const UNDO_COST = 1;
+
+/**
+ * For getting all the way down to a single letter. Without it, stalling on a
+ * two-letter word that holds no A or I costs nothing on about a third of
+ * deals, because a three-point letter the round before covers the two points
+ * the fall would have paid.
+ */
+const FINISH_BONUS = 3;
 
 const NOTHING_USED = new Set();
 
@@ -561,9 +572,10 @@ function playableLetters(block, side, dictionary = DICTIONARY, used = NOTHING_US
   ));
 }
 
-/** The most any run from this position could score. */
+/** The most any run from this position could score, the finish included. */
 function bestFrom(word, used, dictionary) {
-  let best = 0;
+  if (word.length === 1) return FINISH_BONUS;
+  let best = 0;  // stalling here and now, which scores nothing further
   for (const next of nextWords(word, dictionary, used)) {
     const added = [...next].find((c) => !used.has(c));
     const gain = POINTS_PER_WORD + (added ? letterValue(added) : 0);
@@ -666,8 +678,15 @@ class Game {
   get score() {
     const words = this.wordsMade * POINTS_PER_WORD;
     const letters = this.newLetters.reduce((sum, c) => sum + letterValue(c), 0);
+    const bonus = this.phase === "won" ? FINISH_BONUS : 0;
     const penalty = this.undos * UNDO_COST;
-    return { words, letters, penalty, total: Math.max(0, words + letters - penalty) };
+    return {
+      words,
+      letters,
+      bonus,
+      penalty,
+      total: Math.max(0, words + letters + bonus - penalty),
+    };
   }
 
   /** Decide what the player can do from the word now on the board. */
@@ -825,6 +844,7 @@ const els = {
   tallyDetail: document.getElementById("tally-detail"),
   breakdown: document.getElementById("breakdown"),
   hints: document.getElementById("hints"),
+  tallyLabel: document.getElementById("tally-label"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
   rules: document.getElementById("rules"),
@@ -945,7 +965,7 @@ function renderResult() {
   const heading = game.phase === "won"
     ? "Cleared it."
     : game.phase === "done" ? "End of the line." : "Stuck.";
-  const { penalty } = game.score;
+  const { penalty, bonus } = game.score;
   const newLetters = game.newLetters.map((c) => c.toUpperCase()).join(" ") || "none";
   const undoRow = penalty
     ? `<dt>${game.undos} undo${game.undos === 1 ? "" : "s"}</dt><dd>\u2212${penalty}</dd>`
@@ -955,10 +975,10 @@ function renderResult() {
     <dl>
       <dt>${game.wordsMade} word${game.wordsMade === 1 ? "" : "s"} made</dt><dd>${words}</dd>
       <dt>New letters: ${newLetters}</dt><dd>${letters}</dd>
+      ${bonus ? `<dt>Got all the way down</dt><dd>${bonus}</dd>` : ""}
       ${undoRow}
       <dt class="total">Total</dt><dd class="total">${total}</dd>
-    </dl>
-    <p class="ceiling">The best this word was worth: ${game.bestPossible}</p>`;
+    </dl>`;
   const again = document.createElement("button");
   again.textContent = "New game";
   again.addEventListener("click", startNewGame);
@@ -1002,6 +1022,7 @@ function shareText() {
       .join("");
     return `${squares} ${entry.points}`;
   });
+  if (game.score.bonus) rows.push(`finished ${game.score.bonus}`);
   if (game.undos) rows.push(`${game.undos} undo${game.undos === 1 ? "" : "s"}`);
 
   const link = `${location.origin}${location.pathname}?word=${game.seed}`;
@@ -1076,6 +1097,7 @@ function tallyText() {
 
 function renderBreakdown() {
   const lines = game.breakdown.map((entry) => [entry.word, `+${entry.points}`, false]);
+  if (game.score.bonus) lines.push(["finished", `+${game.score.bonus}`, false]);
   if (game.undos) {
     const label = game.undos === 1 ? "1 undo" : `${game.undos} undos`;
     lines.push([label, `\u2212${game.score.penalty}`, true]);
@@ -1107,6 +1129,7 @@ function render() {
   els.message.innerHTML = note || defaultNote();
   els.message.classList.toggle("error", noteIsError);
   els.score.textContent = game.score.total;
+  els.tallyLabel.textContent = `points of ${game.bestPossible}`;
   els.tallyDetail.textContent = tallyText();
   renderBreakdown();
   const undoCosts = game.rows.length > 1 && !game.selection.length && game.phase !== "build";

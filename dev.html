@@ -31,7 +31,7 @@
 <div class="tally">
   <output class="tally-score" id="score" aria-live="polite">0</output>
   <div class="tally-lines">
-    <span class="tally-label">points</span>
+    <span class="tally-label" id="tally-label">points</span>
     <span class="tally-detail" id="tally-detail">no words yet</span>
   </div>
 </div>
@@ -84,12 +84,15 @@
         awkward that letter is to use. The small number in the corner of each
         key says which, the way a Scrabble tile does. The last letter falls
         without adding one, so that round is worth 2.</li>
+    <li><b>3 points</b> for getting all the way down to a single letter. Stop
+        short and you lose them, so the expensive letter is not always worth
+        taking.</li>
     <li><b>Undo costs 1 point</b> once there is a word to take back. Backing out
         of a split you have not committed is free, and your score never goes
         below zero.</li>
   </ul>
-  <p class="max">Every deal has its own best possible score, and you are shown
-     it when you finish. Reaching it means going after the awkward letters
+  <p class="max">Every deal has its own best possible score, shown beside your
+     running total from the start. Reaching it means going after the awkward letters
      rather than the easy ones. A bad split can also leave you with nothing to
      make at all, and then only Undo will save you.</p>
 

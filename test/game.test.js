@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  FINISH_BONUS,
   Game,
   blocks,
   keepCount,
@@ -18,9 +19,14 @@ function play(game, indices, letter, side = "end") {
   return game.submit();
 }
 
-/** PLANT to LAND to LAB to AH, which then falls to A. A perfect run. */
+/** PLANT to LAND to LAB to AH, which then falls to A. A clean run. */
 function perfectRun(game) {
   play(game, [1, 2, 3], "d");
+  return perfectRunRest(game);
+}
+
+/** The same run, from LAND onwards. */
+function perfectRunRest(game) {
   play(game, [0, 1], "b");
   return play(game, [1], "h");
 }
@@ -108,8 +114,8 @@ test("a clean run scores the words plus what each letter is worth", () => {
   assert.deepEqual(game.rows.map((r) => r.word), ["plant", "land", "lab", "ah", "a"]);
   assert.equal(game.phase, "won");
   assert.deepEqual(game.newLetters, ["b", "d", "h"]);
-  // Four words at 2, then D and B at 2 each and H at 3.
-  assert.deepEqual(game.score, { words: 8, letters: 7, penalty: 0, total: 15 });
+  // Four words at 2, then D and B at 2 each and H at 3, then the finish.
+  assert.deepEqual(game.score, { words: 8, letters: 7, bonus: 3, penalty: 0, total: 18 });
 });
 
 test("letters are worth one, two or three", () => {
@@ -123,7 +129,7 @@ test("the ceiling is worked out per deal, and no run can beat it", () => {
   const game = new Game({ seed: "plant" });
   perfectRun(game);
   assert.ok(game.bestPossible >= game.score.total, "a real run cannot exceed the ceiling");
-  assert.ok(game.bestPossible <= 17, "three words plus the fall, all letters worth three");
+  assert.ok(game.bestPossible <= 17 + FINISH_BONUS, "every letter worth three, plus the finish");
 });
 
 test("the last letter falls on its own", () => {
@@ -153,7 +159,7 @@ test("undo steps back past the letter that fell on its own", () => {
 test("undo costs a point once there is a word to take back", () => {
   const game = new Game({ seed: "plant" });
   play(game, [1, 2, 3], "d");
-  assert.equal(game.score.total, 4, "two for LAND and two for the D");
+  assert.equal(game.score.total, 4, "two for LAND and two for the D, nothing banked yet");
 
   game.undo();
   assert.equal(game.currentWord, "plant");
@@ -191,10 +197,9 @@ test("the per-word breakdown adds up to the score", () => {
     { word: "ah", newLetter: "h", points: 5 },
     { word: "a", newLetter: null, points: 2 },
   ]);
-  assert.equal(
-    game.breakdown.reduce((sum, entry) => sum + entry.points, 0),
-    game.score.total
-  );
+  const fromWords = game.breakdown.reduce((sum, entry) => sum + entry.points, 0);
+  assert.equal(fromWords + game.score.bonus, game.score.total,
+    "the words account for everything except the finish bonus");
 });
 
 test("hint mode marks the run and is off to begin with", () => {
@@ -222,4 +227,24 @@ test("every opening word can be played to a single letter without reusing one", 
   const sample = SEED_WORDS.filter((_, i) => i % step === 0);
   const failures = sample.filter((word) => !solve(word, new Set(word)));
   assert.deepEqual(failures, [], "unsolvable openers");
+});
+
+test("the finish bonus only lands once you reach a single letter", () => {
+  const game = new Game({ seed: "plant" });
+  play(game, [1, 2, 3], "d");
+  assert.equal(game.score.bonus, 0, "nothing banked part way down");
+
+  perfectRunRest(game);
+  assert.equal(game.phase, "won");
+  assert.equal(game.score.bonus, FINISH_BONUS);
+});
+
+test("stalling forfeits the bonus", () => {
+  const game = new Game({ seed: "plant" });
+  play(game, [1, 2, 3], "d");
+  play(game, [0, 1], "b");
+  play(game, [2], "o");           // LAB keeps B, adds O, making BO
+  assert.equal(game.currentWord, "bo");
+  assert.equal(game.phase, "done", "BO holds no A or I, so nothing falls");
+  assert.equal(game.score.bonus, 0, "the three points are lost");
 });

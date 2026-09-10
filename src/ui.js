@@ -11,6 +11,7 @@ const els = {
   tallyDetail: document.getElementById("tally-detail"),
   breakdown: document.getElementById("breakdown"),
   hints: document.getElementById("hints"),
+  tallyLabel: document.getElementById("tally-label"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
   rules: document.getElementById("rules"),
@@ -131,7 +132,7 @@ function renderResult() {
   const heading = game.phase === "won"
     ? "Cleared it."
     : game.phase === "done" ? "End of the line." : "Stuck.";
-  const { penalty } = game.score;
+  const { penalty, bonus } = game.score;
   const newLetters = game.newLetters.map((c) => c.toUpperCase()).join(" ") || "none";
   const undoRow = penalty
     ? `<dt>${game.undos} undo${game.undos === 1 ? "" : "s"}</dt><dd>\u2212${penalty}</dd>`
@@ -141,10 +142,10 @@ function renderResult() {
     <dl>
       <dt>${game.wordsMade} word${game.wordsMade === 1 ? "" : "s"} made</dt><dd>${words}</dd>
       <dt>New letters: ${newLetters}</dt><dd>${letters}</dd>
+      ${bonus ? `<dt>Got all the way down</dt><dd>${bonus}</dd>` : ""}
       ${undoRow}
       <dt class="total">Total</dt><dd class="total">${total}</dd>
-    </dl>
-    <p class="ceiling">The best this word was worth: ${game.bestPossible}</p>`;
+    </dl>`;
   const again = document.createElement("button");
   again.textContent = "New game";
   again.addEventListener("click", startNewGame);
@@ -188,6 +189,7 @@ function shareText() {
       .join("");
     return `${squares} ${entry.points}`;
   });
+  if (game.score.bonus) rows.push(`finished ${game.score.bonus}`);
   if (game.undos) rows.push(`${game.undos} undo${game.undos === 1 ? "" : "s"}`);
 
   const link = `${location.origin}${location.pathname}?word=${game.seed}`;
@@ -262,6 +264,7 @@ function tallyText() {
 
 function renderBreakdown() {
   const lines = game.breakdown.map((entry) => [entry.word, `+${entry.points}`, false]);
+  if (game.score.bonus) lines.push(["finished", `+${game.score.bonus}`, false]);
   if (game.undos) {
     const label = game.undos === 1 ? "1 undo" : `${game.undos} undos`;
     lines.push([label, `\u2212${game.score.penalty}`, true]);
@@ -293,6 +296,7 @@ function render() {
   els.message.innerHTML = note || defaultNote();
   els.message.classList.toggle("error", noteIsError);
   els.score.textContent = game.score.total;
+  els.tallyLabel.textContent = `points of ${game.bestPossible}`;
   els.tallyDetail.textContent = tallyText();
   renderBreakdown();
   const undoCosts = game.rows.length > 1 && !game.selection.length && game.phase !== "build";
