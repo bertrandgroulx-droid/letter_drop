@@ -1498,7 +1498,7 @@ function renderResult() {
       ${undoRow}
       <dt class="total">Total</dt><dd class="total">${total} of ${game.bestPossible}</dd>
     </dl>
-    ${game.isPerfect ? `<p class="perfect-note">Nobody could have scored more on ${game.seed.toUpperCase()}.</p>` : ""}`;
+    ${game.isPerfect ? '<p class="perfect-note">You got the maximum score!</p>' : ""}`;
   const again = document.createElement("button");
   again.textContent = "New game";
   again.addEventListener("click", startNewGame);
