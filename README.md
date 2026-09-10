@@ -35,9 +35,12 @@ have already used it. A green key means it was new, and you scored for it.
 
 ## Playing it
 
-The game is plain HTML, CSS, and JavaScript with no dependencies and no build
-step. It does use ES modules, which browsers refuse to load over `file://`, so
-serve the folder rather than opening the file directly.
+The quickest way is to open `dist/letter-drop.html`. It is the whole game in one
+file, so a double-click works with no server and no internet.
+
+To work on the source instead, serve the folder. The game is plain HTML, CSS,
+and JavaScript with no dependencies and no build step, but it does use ES
+modules, which browsers refuse to load over `file://`.
 
 ```
 npm start          # python3 -m http.server 8000
@@ -67,7 +70,16 @@ src/game.js           the rules, with no DOM in sight
 src/ui.js             rendering, keyboard, and input
 src/words.js          generated word data, do not edit
 tools/build_words.py  regenerates src/words.js
+tools/build_single.py packs everything into dist/
 test/game.test.js     tests for the rules
+dist/                 generated single-file builds, do not edit
+```
+
+`dist/` is checked in so the game can be opened or handed to someone without a
+toolchain. Rebuild it after any change to the source:
+
+```
+python3 tools/build_single.py
 ```
 
 ## The word list

@@ -1,32 +1,63 @@
 :root {
   color-scheme: light dark;
-  --bg: #f6f6f4;
+
+  /* Warm neutrals, biased toward the amber the tiles are built on. */
+  --bg: #f7f5f1;
   --surface: #ffffff;
-  --line: #d8d6d0;
-  --ink: #1b1c1e;
-  --ink-dim: #6b6d72;
-  --keep: #e8940c;
-  --keep-ink: #7a4b00;
-  --new: #1e9e5a;
+  --line: #ddd7cc;
+  --ink: #1d1a22;
+  --ink-dim: #6d6673;
+  --keep: #e2890a;
+  --keep-ink: #6b4200;
+  --new: #17915a;
   --new-ink: #0c4f2b;
-  --bad: #d2382c;
+  --bad: #cc3a2b;
+
+  --font-display: "Bricolage Grotesque", "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-ui: "Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
   --tile: clamp(2.9rem, 12vw, 4rem);
   --radius: 10px;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #131519;
-    --surface: #1d2026;
-    --line: #333944;
-    --ink: #eceef2;
-    --ink-dim: #9aa0ab;
-    --keep: #f0a83a;
-    --keep-ink: #2a1a00;
-    --new: #47c98a;
+  :root:not([data-theme="light"]) {
+    --bg: #17151b;
+    --surface: #211e27;
+    --line: #383343;
+    --ink: #f0ecf2;
+    --ink-dim: #a29aad;
+    --keep: #f2a93c;
+    --keep-ink: #2b1a00;
+    --new: #4bcb8c;
     --new-ink: #06301b;
-    --bad: #f0776b;
+    --bad: #f2796d;
   }
+}
+
+:root[data-theme="dark"] {
+    --bg: #17151b;
+    --surface: #211e27;
+    --line: #383343;
+    --ink: #f0ecf2;
+    --ink-dim: #a29aad;
+    --keep: #f2a93c;
+    --keep-ink: #2b1a00;
+    --new: #4bcb8c;
+    --new-ink: #06301b;
+    --bad: #f2796d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid var(--new);
+  outline-offset: 2px;
 }
 
 * { box-sizing: border-box; }
@@ -40,7 +71,7 @@ body {
   padding: 0 max(1rem, env(safe-area-inset-left)) 1rem;
   background: var(--bg);
   color: var(--ink);
-  font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 400 16px/1.5 var(--font-ui);
 }
 
 /* ---------- top bar ---------- */
@@ -57,7 +88,9 @@ body {
 
 h1 {
   margin: 0;
-  font-size: 1.05rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.15rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -97,9 +130,9 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 0.6rem;
   min-height: 0;
+  padding-block-start: clamp(0.5rem, 5vh, 2.5rem);
 }
 
 .board { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
@@ -115,8 +148,9 @@ main {
   border: 2px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  font-size: calc(var(--tile) * 0.46);
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: calc(var(--tile) * 0.48);
+  font-weight: 800;
   text-transform: uppercase;
   padding: 0;
 }
@@ -167,7 +201,7 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
   padding: 0.9rem 1.25rem;
 }
 
-.result h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+.result h2 { margin: 0 0 0.5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
 .result dl { display: grid; grid-template-columns: auto auto; gap: 0.2rem 1.25rem; margin: 0 0 0.75rem; }
 .result dt { color: var(--ink-dim); text-align: left; }
 .result dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
@@ -182,6 +216,7 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
   min-width: clamp(1.7rem, 8.2vw, 2.5rem);
   height: clamp(2.6rem, 11vw, 3.2rem);
   padding: 0 0.25rem;
+  font-family: var(--font-display);
   font-weight: 600;
   text-transform: uppercase;
   font-size: clamp(0.75rem, 3.4vw, 0.95rem);
@@ -222,7 +257,7 @@ dialog {
 }
 
 dialog::backdrop { background: rgb(0 0 0 / 0.55); }
-dialog h2 { margin-top: 0; }
+dialog h2 { margin-top: 0; font-family: var(--font-display); font-weight: 800; }
 dialog h3 { margin-bottom: 0.3rem; }
 .rounds { padding-left: 1.2rem; }
 .rounds li { margin-bottom: 0.35rem; }

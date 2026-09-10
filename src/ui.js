@@ -279,7 +279,9 @@ function onBackspace() {
 }
 
 function startNewGame() {
-  history.replaceState(null, "", location.pathname);
+  try {
+    history.replaceState(null, "", location.pathname);
+  } catch { /* sandboxed frames refuse history writes */ }
   game = new Game();
   landingRow = 0;
   setNote("");
