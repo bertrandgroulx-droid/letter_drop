@@ -823,24 +823,34 @@ function playableLetters(block, side, dictionary = DICTIONARY, used = NOTHING_US
 }
 
 /**
- * The highest-scoring run from this position, the finish included, and the
- * words it goes through. Several runs often tie, and this returns the first
- * of them, so it is a best line rather than the best line.
+ * The highest-scoring run from this position, how many runs tie for it, and
+ * the words one of them goes through.
  */
 function bestRunFrom(word, used, dictionary) {
-  if (word.length === 1) return { score: FINISH_BONUS, line: [] };
+  if (word.length === 1) return { score: FINISH_BONUS, count: 1, line: [] };
 
-  // Stalling here scores nothing further, and is the score to beat.
-  let best = { score: 0, line: [] };
-  for (const next of nextWords(word, dictionary, used)) {
+  // The last letter drops on its own, so it is not a choice and must not
+  // multiply the count when a two-letter word holds both an A and an I.
+  const options = word.length === 2
+    ? [...word].filter((c) => SINGLE_LETTER_WORDS.includes(c)).slice(0, 1)
+    : nextWords(word, dictionary, used);
+
+  // Stalling here and now: one way to do it, and it scores nothing further.
+  let best = { score: 0, count: 1, line: [] };
+  for (const next of options) {
     const added = [...next].find((c) => !used.has(c)) ?? null;
     const points = POINTS_PER_WORD + (added ? letterValue(added) : 0);
     const rest = bestRunFrom(next, new Set([...used, ...next]), dictionary);
-    if (points + rest.score > best.score) {
+    const score = points + rest.score;
+
+    if (score > best.score) {
       best = {
-        score: points + rest.score,
+        score,
+        count: rest.count,
         line: [{ word: next, added, points }, ...rest.line],
       };
+    } else if (score === best.score) {
+      best = { ...best, count: best.count + rest.count };
     }
   }
   return best;
@@ -1591,9 +1601,12 @@ function renderBestRun() {
 
   if (definitionFor && definitionIn === "run") wrap.append(renderDefinition());
 
+  const runs = game.bestRun.count;
   const note = document.createElement("p");
   note.className = "best-run-note";
-  note.textContent = "Tap a word for its meaning.";
+  note.textContent = runs === 1
+    ? `The only run that reaches ${game.bestPossible}. Tap a word for its meaning.`
+    : `${runs} different runs reach ${game.bestPossible}. Tap a word for its meaning.`;
   wrap.append(note);
   return wrap;
 }

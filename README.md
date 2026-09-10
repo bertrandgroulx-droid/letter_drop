@@ -69,8 +69,11 @@ need one kept unspent for the final round.
 
 Every deal has its own ceiling, worked out by searching all of its solutions,
 and it sits beside your running score from the first move. When a game ends you
-can reveal one of the runs that reached it, and you can give up part way
-through to see it early, keeping whatever you have scored so far. Looking
+can reveal one of the runs that reached it, along with how many runs tie for
+it. Ties are the rule rather than the exception: a median deal has around 60
+perfect runs and none has fewer than three, which is why the one shown is
+rarely the one you found. You can also give up part way through to see it
+early, keeping whatever you have scored so far. Looking
 closes the game either way, so undo cannot walk you back into it with the
 answer in hand. Ties are common, so it is a perfect
 run rather than the perfect run. Every word on the board carries a small book at the end of its row, in the slot

@@ -345,3 +345,34 @@ test("the button and the rule agree on whether undo is possible", () => {
   assert.equal(game.canUndo, false, "struck out, so the button must be dead too");
   assert.equal(game.undo(), false);
 });
+
+test("the perfect runs are counted, not just found", () => {
+  const game = new Game({ seed: "plant" });
+  const { score, count, line } = game.bestRun;
+
+  assert.ok(count > 1, "ties are the norm, which is why the count is worth showing");
+  assert.equal(Number.isInteger(count), true);
+  assert.equal(
+    line.reduce((sum, entry) => sum + entry.points, 0) + FINISH_BONUS,
+    score,
+    "the example line really does score what the count is counting"
+  );
+});
+
+test("counting agrees with an exhaustive walk on a small dictionary", () => {
+  // Small enough to enumerate by hand. From ABCDE the only block that leads
+  // anywhere is ABC, which takes either F or V, both worth three, so the two
+  // routes tie. They rejoin at ABH and there is one way down from there.
+  const dictionary = {
+    2: new Set(["ai"]),
+    3: new Set(["abh"]),
+    4: new Set(["abcf", "abcv"]),
+    5: new Set(["abcde"]),
+  };
+  const game = new Game({ seed: "abcde", dictionary });
+  const { count, score, line } = game.bestRun;
+
+  assert.equal(count, 2, "ABCF and ABCV, and nothing else");
+  assert.deepEqual(line.map((entry) => entry.word).slice(1), ["abh", "ai", "a"]);
+  assert.equal(score, 5 + 5 + 3 + 2 + FINISH_BONUS);
+});

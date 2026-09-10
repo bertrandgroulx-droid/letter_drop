@@ -460,9 +460,12 @@ function renderBestRun() {
 
   if (definitionFor && definitionIn === "run") wrap.append(renderDefinition());
 
+  const runs = game.bestRun.count;
   const note = document.createElement("p");
   note.className = "best-run-note";
-  note.textContent = "Tap a word for its meaning.";
+  note.textContent = runs === 1
+    ? `The only run that reaches ${game.bestPossible}. Tap a word for its meaning.`
+    : `${runs} different runs reach ${game.bestPossible}. Tap a word for its meaning.`;
   wrap.append(note);
   return wrap;
 }
