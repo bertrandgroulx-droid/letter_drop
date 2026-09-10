@@ -78,14 +78,26 @@ export function playableLetters(block, side, dictionary = DICTIONARY, used = NOT
   ));
 }
 
-/** The most any run from this position could score, the finish included. */
-function bestFrom(word, used, dictionary) {
-  if (word.length === 1) return FINISH_BONUS;
-  let best = 0;  // stalling here and now, which scores nothing further
+/**
+ * The highest-scoring run from this position, the finish included, and the
+ * words it goes through. Several runs often tie, and this returns the first
+ * of them, so it is a best line rather than the best line.
+ */
+function bestRunFrom(word, used, dictionary) {
+  if (word.length === 1) return { score: FINISH_BONUS, line: [] };
+
+  // Stalling here scores nothing further, and is the score to beat.
+  let best = { score: 0, line: [] };
   for (const next of nextWords(word, dictionary, used)) {
-    const added = [...next].find((c) => !used.has(c));
-    const gain = POINTS_PER_WORD + (added ? letterValue(added) : 0);
-    best = Math.max(best, gain + bestFrom(next, new Set([...used, ...next]), dictionary));
+    const added = [...next].find((c) => !used.has(c)) ?? null;
+    const points = POINTS_PER_WORD + (added ? letterValue(added) : 0);
+    const rest = bestRunFrom(next, new Set([...used, ...next]), dictionary);
+    if (points + rest.score > best.score) {
+      best = {
+        score: points + rest.score,
+        line: [{ word: next, added, points }, ...rest.line],
+      };
+    }
   }
   return best;
 }
@@ -174,11 +186,15 @@ export class Game {
    * score is measured against. Takes a few milliseconds, so it waits until
    * something asks, which is the end of the game.
    */
-  get bestPossible() {
+  get bestRun() {
     if (this.best === null) {
-      this.best = bestFrom(this.seed, new Set(this.seed), this.dictionary);
+      this.best = bestRunFrom(this.seed, new Set(this.seed), this.dictionary);
     }
     return this.best;
+  }
+
+  get bestPossible() {
+    return this.bestRun.score;
   }
 
   get score() {

@@ -1,4 +1,4 @@
-import { Game, UNDO_COST, letterValue, playableLetters } from "./game.js";
+import { FINISH_BONUS, Game, UNDO_COST, letterValue, playableLetters } from "./game.js";
 import { DICTIONARY } from "./words.js";
 
 const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
@@ -26,6 +26,7 @@ function requestedSeed() {
 let game = new Game({ seed: requestedSeed() });
 let landingFrom = 0;
 let hintsOn = false;
+let bestRunShown = false;
 let note = "";
 let noteIsError = false;
 
@@ -174,7 +175,58 @@ function renderResult() {
   }
 
   box.append(actions);
+
+  // Only offered once the game is over, where it can teach without helping.
+  if (bestRunShown) {
+    box.append(renderBestRun());
+  } else {
+    const reveal = document.createElement("button");
+    reveal.className = "ghost reveal";
+    reveal.textContent = "Show a perfect run";
+    reveal.addEventListener("click", () => {
+      bestRunShown = true;
+      render();
+    });
+    box.append(reveal);
+  }
   return box;
+}
+
+/** One of the highest-scoring runs this deal allowed, revealed after the fact. */
+function renderBestRun() {
+  const wrap = document.createElement("div");
+  wrap.className = "best-run";
+
+  const title = document.createElement("h3");
+  title.textContent = `A perfect run, worth ${game.bestPossible}`;
+  wrap.append(title);
+
+  const rows = [
+    [game.seed, "dealt"],
+    ...game.bestRun.line.map((entry) => [entry.word, `+${entry.points}`]),
+    ["finished", `+${FINISH_BONUS}`],
+  ];
+
+  const list = document.createElement("ol");
+  list.className = "breakdown";
+  list.append(...rows.map(([label, value]) => {
+    const item = document.createElement("li");
+    const name = document.createElement("span");
+    name.className = "bd-word";
+    name.textContent = label;
+    const count = document.createElement("span");
+    count.className = "bd-count";
+    count.textContent = value;
+    item.append(name, count);
+    return item;
+  }));
+  wrap.append(list);
+
+  const note = document.createElement("p");
+  note.className = "best-run-note";
+  note.textContent = "Often several runs tie for the best. This is one of them.";
+  wrap.append(note);
+  return wrap;
 }
 
 /**
@@ -424,6 +476,7 @@ function startNewGame() {
   } catch { /* sandboxed frames refuse history writes */ }
   game = new Game();
   game.hintsUsed = hintsOn;
+  bestRunShown = false;
   landingFrom = 0;
   setNote("");
   render();

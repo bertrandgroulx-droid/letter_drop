@@ -55,7 +55,9 @@ need one kept unspent for the final round.
   zero.
 
 Every deal has its own ceiling, worked out by searching all of its solutions,
-and it sits beside your running score from the first move. Across the openers
+and it sits beside your running score from the first move. When a game ends you
+can reveal one of the runs that reached it. Ties are common, so it is a perfect
+run rather than the perfect run. Across the openers
 it runs from 16 to 20, so `17 of 19` means something a flat maximum would not.
 
 The on-screen keyboard greys out every letter that has appeared, whether it

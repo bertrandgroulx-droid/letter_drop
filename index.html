@@ -337,6 +337,24 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 .result h2 { margin: 0 0 0.5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
 .result-actions { display: flex; gap: 0.5rem; justify-content: center; }
 .practice { margin: 0 0 0.75rem; font-size: 0.85rem; color: var(--keep); }
+
+.reveal { margin-top: 0.7rem; }
+
+.best-run {
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+
+.best-run h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+}
+
+.best-run .breakdown { padding-top: 0.4rem; }
+.best-run-note { margin: 0.5rem 0 0; font-size: 0.75rem; color: var(--ink-dim); }
 .result dl { display: grid; grid-template-columns: auto auto; gap: 0.2rem 1.25rem; margin: 0 0 0.75rem; }
 .result dt { color: var(--ink-dim); text-align: left; }
 .result dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
@@ -502,7 +520,9 @@ dialog form { text-align: right; }
   <p class="max">Every deal has its own best possible score, shown beside your
      running total from the start. Reaching it is a balance: the awkward letters
      pay more, but taking one without a route to the bottom costs you the
-     finish, and a bad split can leave you with nothing to make at all.</p>
+     finish, and a bad split can leave you with nothing to make at all. When a
+     game ends you can reveal a run that scored the lot, to see what you
+     missed.</p>
 
   <h3>The one thing to plan for</h3>
   <p class="tip">Nothing falls unless your <b>two-letter word holds an A or an
@@ -621,14 +641,26 @@ function playableLetters(block, side, dictionary = DICTIONARY, used = NOTHING_US
   ));
 }
 
-/** The most any run from this position could score, the finish included. */
-function bestFrom(word, used, dictionary) {
-  if (word.length === 1) return FINISH_BONUS;
-  let best = 0;  // stalling here and now, which scores nothing further
+/**
+ * The highest-scoring run from this position, the finish included, and the
+ * words it goes through. Several runs often tie, and this returns the first
+ * of them, so it is a best line rather than the best line.
+ */
+function bestRunFrom(word, used, dictionary) {
+  if (word.length === 1) return { score: FINISH_BONUS, line: [] };
+
+  // Stalling here scores nothing further, and is the score to beat.
+  let best = { score: 0, line: [] };
   for (const next of nextWords(word, dictionary, used)) {
-    const added = [...next].find((c) => !used.has(c));
-    const gain = POINTS_PER_WORD + (added ? letterValue(added) : 0);
-    best = Math.max(best, gain + bestFrom(next, new Set([...used, ...next]), dictionary));
+    const added = [...next].find((c) => !used.has(c)) ?? null;
+    const points = POINTS_PER_WORD + (added ? letterValue(added) : 0);
+    const rest = bestRunFrom(next, new Set([...used, ...next]), dictionary);
+    if (points + rest.score > best.score) {
+      best = {
+        score: points + rest.score,
+        line: [{ word: next, added, points }, ...rest.line],
+      };
+    }
   }
   return best;
 }
@@ -717,11 +749,15 @@ class Game {
    * score is measured against. Takes a few milliseconds, so it waits until
    * something asks, which is the end of the game.
    */
-  get bestPossible() {
+  get bestRun() {
     if (this.best === null) {
-      this.best = bestFrom(this.seed, new Set(this.seed), this.dictionary);
+      this.best = bestRunFrom(this.seed, new Set(this.seed), this.dictionary);
     }
     return this.best;
+  }
+
+  get bestPossible() {
+    return this.bestRun.score;
   }
 
   get score() {
@@ -908,6 +944,7 @@ function requestedSeed() {
 let game = new Game({ seed: requestedSeed() });
 let landingFrom = 0;
 let hintsOn = false;
+let bestRunShown = false;
 let note = "";
 let noteIsError = false;
 
@@ -1056,7 +1093,58 @@ function renderResult() {
   }
 
   box.append(actions);
+
+  // Only offered once the game is over, where it can teach without helping.
+  if (bestRunShown) {
+    box.append(renderBestRun());
+  } else {
+    const reveal = document.createElement("button");
+    reveal.className = "ghost reveal";
+    reveal.textContent = "Show a perfect run";
+    reveal.addEventListener("click", () => {
+      bestRunShown = true;
+      render();
+    });
+    box.append(reveal);
+  }
   return box;
+}
+
+/** One of the highest-scoring runs this deal allowed, revealed after the fact. */
+function renderBestRun() {
+  const wrap = document.createElement("div");
+  wrap.className = "best-run";
+
+  const title = document.createElement("h3");
+  title.textContent = `A perfect run, worth ${game.bestPossible}`;
+  wrap.append(title);
+
+  const rows = [
+    [game.seed, "dealt"],
+    ...game.bestRun.line.map((entry) => [entry.word, `+${entry.points}`]),
+    ["finished", `+${FINISH_BONUS}`],
+  ];
+
+  const list = document.createElement("ol");
+  list.className = "breakdown";
+  list.append(...rows.map(([label, value]) => {
+    const item = document.createElement("li");
+    const name = document.createElement("span");
+    name.className = "bd-word";
+    name.textContent = label;
+    const count = document.createElement("span");
+    count.className = "bd-count";
+    count.textContent = value;
+    item.append(name, count);
+    return item;
+  }));
+  wrap.append(list);
+
+  const note = document.createElement("p");
+  note.className = "best-run-note";
+  note.textContent = "Often several runs tie for the best. This is one of them.";
+  wrap.append(note);
+  return wrap;
 }
 
 /**
@@ -1306,6 +1394,7 @@ function startNewGame() {
   } catch { /* sandboxed frames refuse history writes */ }
   game = new Game();
   game.hintsUsed = hintsOn;
+  bestRunShown = false;
   landingFrom = 0;
   setNote("");
   render();
