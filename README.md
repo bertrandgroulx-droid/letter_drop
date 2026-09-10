@@ -28,6 +28,14 @@ A sample run from PLANT: keep LAN, add D for LAND. Keep LA, add B for LAB. Keep
 A, add H for AH. The A then falls on its own and the game is over. That run
 spends D, B, and H, and scores the full 11.
 
+## The one thing to plan for
+
+Nothing falls unless the two-letter word holds an A or an I, and those obey the
+same no-reuse rule as every other letter: once one is on the board it can only
+be carried down, never added again. 59% of openers already hold one, and those
+runs are about choosing splits that bring it all the way down. The other 41%
+need one kept unspent for the final round.
+
 ## Scoring
 
 - **2 points** for every word you make. The opening word is dealt, not earned,

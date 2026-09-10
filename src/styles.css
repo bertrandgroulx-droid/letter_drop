@@ -392,4 +392,12 @@ dialog li { margin-bottom: 0.3rem; }
 .rounds { padding-left: 1.2rem; }
 .rounds li { margin-bottom: 0.35rem; }
 .max { color: var(--ink-dim); font-size: 0.88rem; }
+
+.tip {
+  margin: 0.4rem 0 0;
+  padding: 0.6rem 0.8rem;
+  border-left: 3px solid var(--keep);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: color-mix(in srgb, var(--keep) 10%, transparent);
+}
 dialog form { text-align: right; }
