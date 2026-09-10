@@ -68,9 +68,15 @@ export function nextWords(word, dictionary = DICTIONARY, used = NOTHING_USED) {
   return [...found].sort();
 }
 
-export const LEVELS = ["any", "easy", "hard", "brutal"];
+export const LEVELS = ["easy", "hard", "brutal"];
 
-export function randomSeed(level = "any", random = Math.random) {
+/** What each level is called on screen, in the order the slider runs. */
+export const LEVEL_NAMES = { easy: "Easy", hard: "Tricky", brutal: "Fiendish" };
+
+/** Where a newcomer starts, and where anyone lands if their choice is gone. */
+export const DEFAULT_LEVEL = "hard";
+
+export function randomSeed(level = DEFAULT_LEVEL, random = Math.random) {
   const pool = SEEDS[level] ?? SEED_WORDS;
   return pool[Math.floor(random() * pool.length)];
 }

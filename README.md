@@ -113,10 +113,14 @@ disabled, because a spent letter can never be played again.
 
 ## Levels
 
+A slider at the top of the page picks the level, running Easy to Tricky to
+Fiendish. It starts in the middle, and a stored choice that no longer exists
+lands there too.
+
 Every opener is graded when the word data is built. **Easy** deals are the ones
 where the obvious play, taking the most valuable letter available, is also the
-best play. **Hard** deals are where it is not, and chasing the fat letter
-usually strands you. **Brutal** deals are vetoed out of the other two: their
+best play. **Tricky** deals are where it is not, and chasing the fat letter
+usually strands you. **Fiendish** deals are vetoed out of the other two: their
 best runs need words most people have never met, measured by how much of the
 ceiling is unreachable using only common words.
 

@@ -117,6 +117,71 @@ h1 {
 
 .bar-right { display: flex; align-items: center; gap: 0.5rem; }
 
+/* ---------- level ---------- */
+
+.levels {
+  width: 100%;
+  max-width: 21rem;
+  padding-top: 0.85rem;
+}
+
+.levels input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  margin: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.levels input[type="range"]::-webkit-slider-runnable-track {
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.levels input[type="range"]::-moz-range-track {
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.levels input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-top: -0.5rem;
+  border-radius: 50%;
+  background: var(--keep);
+  border: 2px solid var(--surface);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.28);
+}
+
+.levels input[type="range"]::-moz-range-thumb {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: var(--keep);
+  border: 2px solid var(--surface);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.28);
+}
+
+.levels input[type="range"]:focus-visible { outline-offset: 4px; }
+
+.level-names {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.level-names span:nth-child(2) { text-align: center; }
+.level-names span:nth-child(3) { text-align: right; }
+.level-names .on { color: var(--keep); font-weight: 700; }
+
 /* ---------- running score ---------- */
 
 .tally {
@@ -198,16 +263,6 @@ button.primary { background: var(--new); border-color: var(--new); color: #fff; 
 button.quiet { background: var(--surface); border-color: var(--line); color: var(--ink-dim); }
 button.quiet:hover { color: var(--ink); }
 .ghost { font-size: 0.85rem; }
-
-.level select {
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--ink);
-}
 
 .visually-hidden {
   position: absolute;

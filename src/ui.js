@@ -1,4 +1,4 @@
-import { FINISH_BONUS, Game, LEVELS, STRIKE_LIMIT, UNDO_COST, letterValue, playableLetters, randomSeed } from "./game.js";
+import { DEFAULT_LEVEL, FINISH_BONUS, Game, LEVELS, LEVEL_NAMES, STRIKE_LIMIT, UNDO_COST, letterValue, playableLetters, randomSeed } from "./game.js";
 import { DICTIONARY } from "./words.js";
 
 const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
@@ -13,6 +13,7 @@ const els = {
   result: document.getElementById("result"),
   hints: document.getElementById("hints"),
   level: document.getElementById("level"),
+  levelNames: document.getElementById("level-names"),
   tallyLabel: document.getElementById("tally-label"),
   giveUp: document.getElementById("give-up"),
   strikes: document.getElementById("strikes"),
@@ -36,9 +37,10 @@ const store = {
   },
 };
 
+// A level that no longer exists, or none at all, lands in the middle.
 let level = LEVELS.includes(store.get("letterdrop.level"))
   ? store.get("letterdrop.level")
-  : "any";
+  : DEFAULT_LEVEL;
 let game = new Game({ seed: requestedSeed() ?? randomSeed(level) });
 let landingFrom = 0;
 let hintsOn = false;
@@ -640,6 +642,7 @@ function render() {
   els.hints.classList.toggle("on", hintsOn);
   els.hints.classList.toggle("armed", hintsArmed);
   els.hints.setAttribute("aria-pressed", String(hintsOn));
+  renderLevels();
   renderKeyboard();
 }
 
@@ -809,8 +812,20 @@ function startNewGame() {
 
 els.undo.addEventListener("click", onBackspace);
 els.newGame.addEventListener("click", startNewGame);
-els.level.addEventListener("change", () => {
-  level = els.level.value;
+function renderLevels() {
+  els.level.value = String(LEVELS.indexOf(level));
+  els.levelNames.replaceChildren(...LEVELS.map((name) => {
+    const span = document.createElement("span");
+    span.textContent = LEVEL_NAMES[name];
+    if (name === level) span.className = "on";
+    return span;
+  }));
+}
+
+els.level.addEventListener("input", () => {
+  const chosen = LEVELS[Number(els.level.value)];
+  if (!chosen || chosen === level) return;
+  level = chosen;
   store.set("letterdrop.level", level);
   startNewGame();
 });
@@ -838,7 +853,6 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-els.level.value = level;
 if (!store.get("letterdrop.seen")) {
   store.set("letterdrop.seen", "1");
   openRules();

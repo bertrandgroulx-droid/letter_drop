@@ -5,6 +5,7 @@ import {
   FINISH_BONUS,
   LETTER_VALUES,
   LEVELS,
+  LEVEL_NAMES,
   POINTS_PER_WORD,
   STRIKE_LIMIT,
   UNDO_COST,
@@ -62,9 +63,11 @@ test("the strike limit is stated correctly", () => {
   );
 });
 
-test("every level is described", () => {
-  for (const level of LEVELS.filter((l) => l !== "any")) {
-    assert.match(rules, new RegExp(`<b>${level}</b>`, "i"), `${level} should be explained`);
+test("every level is described, by the name players see", () => {
+  for (const level of LEVELS) {
+    const shown = LEVEL_NAMES[level];
+    assert.ok(shown, `${level} needs a name on screen`);
+    assert.match(rules, new RegExp(`<b>${shown}</b>`, "i"), `${shown} should be explained`);
   }
 });
 

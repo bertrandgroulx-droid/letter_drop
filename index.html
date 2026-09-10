@@ -136,6 +136,71 @@ h1 {
 
 .bar-right { display: flex; align-items: center; gap: 0.5rem; }
 
+/* ---------- level ---------- */
+
+.levels {
+  width: 100%;
+  max-width: 21rem;
+  padding-top: 0.85rem;
+}
+
+.levels input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  margin: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.levels input[type="range"]::-webkit-slider-runnable-track {
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.levels input[type="range"]::-moz-range-track {
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.levels input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-top: -0.5rem;
+  border-radius: 50%;
+  background: var(--keep);
+  border: 2px solid var(--surface);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.28);
+}
+
+.levels input[type="range"]::-moz-range-thumb {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: var(--keep);
+  border: 2px solid var(--surface);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.28);
+}
+
+.levels input[type="range"]:focus-visible { outline-offset: 4px; }
+
+.level-names {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.level-names span:nth-child(2) { text-align: center; }
+.level-names span:nth-child(3) { text-align: right; }
+.level-names .on { color: var(--keep); font-weight: 700; }
+
 /* ---------- running score ---------- */
 
 .tally {
@@ -217,16 +282,6 @@ button.primary { background: var(--new); border-color: var(--new); color: #fff; 
 button.quiet { background: var(--surface); border-color: var(--line); color: var(--ink-dim); }
 button.quiet:hover { color: var(--ink); }
 .ghost { font-size: 0.85rem; }
-
-.level select {
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--ink);
-}
 
 .visually-hidden {
   position: absolute;
@@ -635,20 +690,19 @@ dialog form { text-align: right; }
 <header class="bar">
   <h1>Letter&nbsp;Drop</h1>
   <div class="bar-right">
-    <label class="level"><span class="visually-hidden">Level</span>
-      <select id="level">
-        <option value="any">Any level</option>
-        <option value="easy">Easy</option>
-        <option value="hard">Hard</option>
-        <option value="brutal">Brutal</option>
-      </select>
-    </label>
     <button type="button" id="hints" class="ghost" aria-pressed="false"
             title="Ring every letter that makes a word from here. A run played with hints on counts as practice and cannot be shared.">Hints</button>
     <button type="button" id="how-to" class="ghost">How to play</button>
     <button type="button" id="new-game" class="ghost">New game</button>
   </div>
 </header>
+
+<div class="levels">
+  <input type="range" id="level" min="0" max="2" step="1" value="1"
+         aria-label="Level" list="level-marks">
+  <datalist id="level-marks"><option value="0"></option><option value="1"></option><option value="2"></option></datalist>
+  <div class="level-names" id="level-names"></div>
+</div>
 
 <div class="tally">
   <output class="tally-score" id="score" aria-live="polite">0</output>
@@ -752,11 +806,12 @@ dialog form { text-align: right; }
      contains neither, keep one of them unspent for the last round.</p>
 
   <h3>Levels</h3>
-  <p>Every opening word is graded when the game is built. On <b>easy</b> deals
-     the obvious play, taking the most valuable letter you can, is also the
-     best play. On <b>hard</b> ones it is not, and going for the fat letter
-     will usually strand you. <b>Brutal</b> deals are those whose best runs go
-     through words most people have never met.</p>
+  <p>The slider at the top picks how hard a word you are dealt. Every opening
+     word is graded when the game is built. On <b>Easy</b> deals the obvious
+     play, taking the most valuable letter you can, is also the best play. On
+     <b>Tricky</b> ones it is not, and going for the fat letter will usually
+     strand you. <b>Fiendish</b> deals are those whose best runs go through
+     words most people have never met.</p>
 
   <h3>Hints</h3>
   <p>Turn <b>Hints</b> on and every letter that makes a word from where you
@@ -866,9 +921,15 @@ function nextWords(word, dictionary = DICTIONARY, used = NOTHING_USED) {
   return [...found].sort();
 }
 
-const LEVELS = ["any", "easy", "hard", "brutal"];
+const LEVELS = ["easy", "hard", "brutal"];
 
-function randomSeed(level = "any", random = Math.random) {
+/** What each level is called on screen, in the order the slider runs. */
+const LEVEL_NAMES = { easy: "Easy", hard: "Tricky", brutal: "Fiendish" };
+
+/** Where a newcomer starts, and where anyone lands if their choice is gone. */
+const DEFAULT_LEVEL = "hard";
+
+function randomSeed(level = DEFAULT_LEVEL, random = Math.random) {
   const pool = SEEDS[level] ?? SEED_WORDS;
   return pool[Math.floor(random() * pool.length)];
 }
@@ -1235,6 +1296,7 @@ const els = {
   result: document.getElementById("result"),
   hints: document.getElementById("hints"),
   level: document.getElementById("level"),
+  levelNames: document.getElementById("level-names"),
   tallyLabel: document.getElementById("tally-label"),
   giveUp: document.getElementById("give-up"),
   strikes: document.getElementById("strikes"),
@@ -1258,9 +1320,10 @@ const store = {
   },
 };
 
+// A level that no longer exists, or none at all, lands in the middle.
 let level = LEVELS.includes(store.get("letterdrop.level"))
   ? store.get("letterdrop.level")
-  : "any";
+  : DEFAULT_LEVEL;
 let game = new Game({ seed: requestedSeed() ?? randomSeed(level) });
 let landingFrom = 0;
 let hintsOn = false;
@@ -1862,6 +1925,7 @@ function render() {
   els.hints.classList.toggle("on", hintsOn);
   els.hints.classList.toggle("armed", hintsArmed);
   els.hints.setAttribute("aria-pressed", String(hintsOn));
+  renderLevels();
   renderKeyboard();
 }
 
@@ -2031,8 +2095,20 @@ function startNewGame() {
 
 els.undo.addEventListener("click", onBackspace);
 els.newGame.addEventListener("click", startNewGame);
-els.level.addEventListener("change", () => {
-  level = els.level.value;
+function renderLevels() {
+  els.level.value = String(LEVELS.indexOf(level));
+  els.levelNames.replaceChildren(...LEVELS.map((name) => {
+    const span = document.createElement("span");
+    span.textContent = LEVEL_NAMES[name];
+    if (name === level) span.className = "on";
+    return span;
+  }));
+}
+
+els.level.addEventListener("input", () => {
+  const chosen = LEVELS[Number(els.level.value)];
+  if (!chosen || chosen === level) return;
+  level = chosen;
   store.set("letterdrop.level", level);
   startNewGame();
 });
@@ -2060,7 +2136,6 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-els.level.value = level;
 if (!store.get("letterdrop.seen")) {
   store.set("letterdrop.seen", "1");
   openRules();

@@ -22,20 +22,19 @@
 <header class="bar">
   <h1>Letter&nbsp;Drop</h1>
   <div class="bar-right">
-    <label class="level"><span class="visually-hidden">Level</span>
-      <select id="level">
-        <option value="any">Any level</option>
-        <option value="easy">Easy</option>
-        <option value="hard">Hard</option>
-        <option value="brutal">Brutal</option>
-      </select>
-    </label>
     <button type="button" id="hints" class="ghost" aria-pressed="false"
             title="Ring every letter that makes a word from here. A run played with hints on counts as practice and cannot be shared.">Hints</button>
     <button type="button" id="how-to" class="ghost">How to play</button>
     <button type="button" id="new-game" class="ghost">New game</button>
   </div>
 </header>
+
+<div class="levels">
+  <input type="range" id="level" min="0" max="2" step="1" value="1"
+         aria-label="Level" list="level-marks">
+  <datalist id="level-marks"><option value="0"></option><option value="1"></option><option value="2"></option></datalist>
+  <div class="level-names" id="level-names"></div>
+</div>
 
 <div class="tally">
   <output class="tally-score" id="score" aria-live="polite">0</output>
@@ -139,11 +138,12 @@
      contains neither, keep one of them unspent for the last round.</p>
 
   <h3>Levels</h3>
-  <p>Every opening word is graded when the game is built. On <b>easy</b> deals
-     the obvious play, taking the most valuable letter you can, is also the
-     best play. On <b>hard</b> ones it is not, and going for the fat letter
-     will usually strand you. <b>Brutal</b> deals are those whose best runs go
-     through words most people have never met.</p>
+  <p>The slider at the top picks how hard a word you are dealt. Every opening
+     word is graded when the game is built. On <b>Easy</b> deals the obvious
+     play, taking the most valuable letter you can, is also the best play. On
+     <b>Tricky</b> ones it is not, and going for the fat letter will usually
+     strand you. <b>Fiendish</b> deals are those whose best runs go through
+     words most people have never met.</p>
 
   <h3>Hints</h3>
   <p>Turn <b>Hints</b> on and every letter that makes a word from where you

@@ -9,6 +9,9 @@ import {
   nextWords,
   playableLetters,
   randomSeed,
+  DEFAULT_LEVEL,
+  LEVELS,
+  LEVEL_NAMES,
 } from "../src/game.js";
 import { DICTIONARY, SEEDS, SEED_WORDS } from "../src/words.js";
 
@@ -389,10 +392,16 @@ test("every opener is graded, and the grades partition the openers", () => {
 
 test("a level deals only from its own pool", () => {
   const always = () => 0;
-  assert.equal(randomSeed("easy", always), SEEDS.easy[0]);
-  assert.equal(randomSeed("brutal", always), SEEDS.brutal[0]);
-  assert.equal(randomSeed("any", always), SEED_WORDS[0]);
+  for (const level of LEVELS) {
+    assert.equal(randomSeed(level, always), SEEDS[level][0]);
+  }
   assert.equal(randomSeed("nonsense", always), SEED_WORDS[0], "an unknown level falls back to all");
+});
+
+test("the levels run easy to fiendish, and the middle one is the default", () => {
+  assert.deepEqual(LEVELS, ["easy", "hard", "brutal"], "the slider reads left to right");
+  assert.deepEqual(LEVELS.map((l) => LEVEL_NAMES[l]), ["Easy", "Tricky", "Fiendish"]);
+  assert.equal(DEFAULT_LEVEL, LEVELS[1], "a lost or missing choice lands in the middle");
 });
 
 test("easy deals are the ones where the obvious play is the best play", () => {
