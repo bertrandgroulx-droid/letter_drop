@@ -70,6 +70,7 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
@@ -229,9 +230,26 @@ main {
   padding-block-start: clamp(0.5rem, 5vh, 2.5rem);
 }
 
-.board { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+/* Rows are placed by their offset rather than centred, so tiles shrink when a
+   run wanders sideways instead of running off a phone screen. */
+.board {
+  --gap: 0.4rem;
+  --tile: min(
+    clamp(2.9rem, 12vw, 4rem),
+    calc((100vw - 2.5rem - (var(--extent, 5) - 1) * var(--gap)) / var(--extent, 5))
+  );
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+}
 
-.row { display: flex; gap: 0.4rem; align-items: center; }
+.row {
+  display: flex;
+  gap: var(--gap);
+  align-items: center;
+  margin-left: calc((var(--tile) + var(--gap)) * var(--offset, 0));
+}
 
 .tile {
   position: relative;
@@ -375,7 +393,13 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 .result-actions { display: flex; gap: 0.5rem; justify-content: center; }
 .practice { margin: 0 0 0.75rem; font-size: 0.85rem; color: var(--keep); }
 
-.reveal { margin-top: 0.7rem; }
+/* Two blinks, then a rest, so it catches the eye without nagging. */
+.reveal { margin-top: 0.7rem; animation: blink-twice 2s ease-in-out infinite; }
+
+@keyframes blink-twice {
+  0%, 14%, 28%, 100% { background: var(--surface); border-color: var(--line); color: var(--ink); }
+  7%, 21% { background: var(--new); border-color: var(--new); color: #fff; }
+}
 
 .best-run {
   margin-top: 0.9rem;
@@ -1078,10 +1102,37 @@ function tileClasses(row, index, isCurrent) {
   return classes.join(" ");
 }
 
-function renderRow(row, rowIndex) {
+/**
+ * Where each row sits, so a dropped letter lands directly under itself and the
+ * arrows point at the real thing. Rows step left and right as a result, which
+ * is the shape of the run rather than a tidy funnel.
+ */
+function boardLayout() {
+  const offsets = [0];
+  game.rows.forEach((row, i) => {
+    if (!row.kept) return;
+    const next = game.rows[i + 1];
+    // A committed row puts the block after the added letter only when that
+    // letter went in front. A draft row always shows its front slot.
+    const blockStart = next ? (next.added?.side === "front" ? 1 : 0) : 1;
+    offsets[i + 1] = offsets[i] + row.kept[0] - blockStart;
+  });
+
+  const leftmost = Math.min(...offsets);
+  const placed = offsets.map((offset) => offset - leftmost);
+
+  const widths = game.rows.map((row) => row.word.length);
+  if (game.phase === "build") widths.push(game.block.length + 2);
+  const extent = Math.max(...widths.map((width, i) => width + placed[i]));
+
+  return { offsets: placed, extent };
+}
+
+function renderRow(row, rowIndex, offset) {
   const isCurrent = rowIndex === game.rows.length - 1;
   const div = document.createElement("div");
   div.className = "row";
+  div.style.setProperty("--offset", offset);
   if (rowIndex >= landingFrom) div.classList.add("landing");
 
   [...row.word].forEach((letter, index) => {
@@ -1123,9 +1174,10 @@ function renderSlot(side) {
   return slot;
 }
 
-function renderDraft() {
+function renderDraft(offset) {
   const div = document.createElement("div");
   div.className = landingFrom === game.rows.length ? "row draft landing" : "row draft";
+  div.style.setProperty("--offset", offset);
   div.append(renderSlot("front"));
   for (const letter of game.block) {
     const tile = document.createElement("div");
@@ -1174,7 +1226,7 @@ function renderResult() {
       <dt>New letters: ${newLetters}</dt><dd>${letters}</dd>
       ${bonus ? `<dt>Got all the way down</dt><dd>${bonus}</dd>` : ""}
       ${undoRow}
-      <dt class="total">Total</dt><dd class="total">${total}</dd>
+      <dt class="total">Total</dt><dd class="total">${total} of ${game.bestPossible}</dd>
     </dl>`;
   const again = document.createElement("button");
   again.textContent = "New game";
@@ -1380,7 +1432,7 @@ function renderBestRun() {
 
   const note = document.createElement("p");
   note.className = "best-run-note";
-  note.textContent = "Tap a word for its meaning. Runs often tie for best, and this is one of them.";
+  note.textContent = "Tap a word for its meaning.";
   wrap.append(note);
   return wrap;
 }
@@ -1500,9 +1552,11 @@ function renderBreakdown() {
 }
 
 function render() {
+  const layout = boardLayout();
+  els.board.style.setProperty("--extent", layout.extent);
   els.board.replaceChildren(
-    ...game.rows.map(renderRow),
-    ...(game.phase === "build" ? [renderDraft()] : []),
+    ...game.rows.map((row, i) => renderRow(row, i, layout.offsets[i])),
+    ...(game.phase === "build" ? [renderDraft(layout.offsets[game.rows.length])] : []),
     ...(game.isOver ? [renderResult()] : [])
   );
   landingFrom = Infinity;

@@ -73,10 +73,37 @@ function tileClasses(row, index, isCurrent) {
   return classes.join(" ");
 }
 
-function renderRow(row, rowIndex) {
+/**
+ * Where each row sits, so a dropped letter lands directly under itself and the
+ * arrows point at the real thing. Rows step left and right as a result, which
+ * is the shape of the run rather than a tidy funnel.
+ */
+function boardLayout() {
+  const offsets = [0];
+  game.rows.forEach((row, i) => {
+    if (!row.kept) return;
+    const next = game.rows[i + 1];
+    // A committed row puts the block after the added letter only when that
+    // letter went in front. A draft row always shows its front slot.
+    const blockStart = next ? (next.added?.side === "front" ? 1 : 0) : 1;
+    offsets[i + 1] = offsets[i] + row.kept[0] - blockStart;
+  });
+
+  const leftmost = Math.min(...offsets);
+  const placed = offsets.map((offset) => offset - leftmost);
+
+  const widths = game.rows.map((row) => row.word.length);
+  if (game.phase === "build") widths.push(game.block.length + 2);
+  const extent = Math.max(...widths.map((width, i) => width + placed[i]));
+
+  return { offsets: placed, extent };
+}
+
+function renderRow(row, rowIndex, offset) {
   const isCurrent = rowIndex === game.rows.length - 1;
   const div = document.createElement("div");
   div.className = "row";
+  div.style.setProperty("--offset", offset);
   if (rowIndex >= landingFrom) div.classList.add("landing");
 
   [...row.word].forEach((letter, index) => {
@@ -118,9 +145,10 @@ function renderSlot(side) {
   return slot;
 }
 
-function renderDraft() {
+function renderDraft(offset) {
   const div = document.createElement("div");
   div.className = landingFrom === game.rows.length ? "row draft landing" : "row draft";
+  div.style.setProperty("--offset", offset);
   div.append(renderSlot("front"));
   for (const letter of game.block) {
     const tile = document.createElement("div");
@@ -169,7 +197,7 @@ function renderResult() {
       <dt>New letters: ${newLetters}</dt><dd>${letters}</dd>
       ${bonus ? `<dt>Got all the way down</dt><dd>${bonus}</dd>` : ""}
       ${undoRow}
-      <dt class="total">Total</dt><dd class="total">${total}</dd>
+      <dt class="total">Total</dt><dd class="total">${total} of ${game.bestPossible}</dd>
     </dl>`;
   const again = document.createElement("button");
   again.textContent = "New game";
@@ -375,7 +403,7 @@ function renderBestRun() {
 
   const note = document.createElement("p");
   note.className = "best-run-note";
-  note.textContent = "Tap a word for its meaning. Runs often tie for best, and this is one of them.";
+  note.textContent = "Tap a word for its meaning.";
   wrap.append(note);
   return wrap;
 }
@@ -495,9 +523,11 @@ function renderBreakdown() {
 }
 
 function render() {
+  const layout = boardLayout();
+  els.board.style.setProperty("--extent", layout.extent);
   els.board.replaceChildren(
-    ...game.rows.map(renderRow),
-    ...(game.phase === "build" ? [renderDraft()] : []),
+    ...game.rows.map((row, i) => renderRow(row, i, layout.offsets[i])),
+    ...(game.phase === "build" ? [renderDraft(layout.offsets[game.rows.length])] : []),
     ...(game.isOver ? [renderResult()] : [])
   );
   landingFrom = Infinity;

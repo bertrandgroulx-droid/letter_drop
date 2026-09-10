@@ -30,10 +30,13 @@ A sample run from PLANT: drop LAN, add D for LAND. Drop LA, add B for LAB.
 Drop A, add H for AH. The A then falls on its own and the game is over. That run
 spends D, B, and H, and scores the full 11.
 
-The board shows where every letter went. While you are choosing, your
-selection is amber. Once it has dropped, those tiles turn grey with an arrow
-beneath them, and the letters left behind fade out, because they are out of the
-game. The letter you add carries no marking of its own beyond its value, since
+The board shows where every letter went. Rows are placed so a dropped letter
+sits directly above itself in the row below, which means the arrows point at
+the real thing and the ladder can be traced from top to bottom. It wanders
+sideways as a result rather than tapering like a funnel, and tiles shrink to
+fit when a run wanders far. While you are choosing, your selection is amber.
+Once it has dropped, those tiles turn grey with an arrow beneath them, and the
+letters left behind fade out, because they are out of the game. The letter you add carries no marking of its own beyond its value, since
 every added letter is a new one and marking it would say nothing.
 
 ## The one thing to plan for
