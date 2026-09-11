@@ -16,6 +16,9 @@
   --keep-ink: #6b4200;
   --new: #17915a;
   --new-ink: #0c4f2b;
+  /* Text laid on a solid --new fill. The green lightens in dark mode, so the
+     ink flips with it rather than staying white. */
+  --on-new: #ffffff;
   --bad: #cc3a2b;
 
   --font-display: "Bricolage Grotesque", "Public Sans", ui-sans-serif, system-ui, sans-serif;
@@ -36,6 +39,7 @@
     --keep-ink: #2b1a00;
     --new: #4bcb8c;
     --new-ink: #06301b;
+    --on-new: #06301b;
     --bad: #f2796d;
   }
 }
@@ -50,6 +54,7 @@
     --keep-ink: #2b1a00;
     --new: #4bcb8c;
     --new-ink: #06301b;
+    --on-new: #06301b;
     --bad: #f2796d;
 }
 
@@ -264,7 +269,7 @@ button {
 
 button:hover:not(:disabled) { border-color: var(--ink-dim); }
 button:disabled { opacity: 0.4; cursor: default; }
-button.primary { background: var(--new); border-color: var(--new); color: #fff; font-weight: 600; }
+button.primary { background: var(--new); border-color: var(--new); color: var(--on-new); font-weight: 600; }
 button.quiet { background: var(--surface); border-color: var(--line); color: var(--ink-dim); }
 button.quiet:hover { color: var(--ink); }
 .ghost { font-size: 0.85rem; }
@@ -276,7 +281,7 @@ button.quiet:hover { color: var(--ink); }
   overflow: hidden;
   clip-path: inset(50%);
 }
-.ghost.on { background: var(--new); border-color: var(--new); color: #fff; }
+.ghost.on { background: var(--new); border-color: var(--new); color: var(--on-new); }
 .ghost.on:hover { border-color: var(--new); }
 
 /* Half-pressed: one more tap and it happens. */
@@ -707,6 +712,22 @@ dialog::backdrop { background: rgb(0 0 0 / 0.55); }
   justify-content: space-between;
   gap: 0.75rem;
   margin-top: 0.7rem;
+}
+
+/* Green, like the game's own confirm and New game: these are controls you
+   drive, not a caption you watch go by. */
+.demo-nav button {
+  border-color: var(--new);
+  color: var(--new);
+  font-weight: 600;
+}
+
+.demo-nav button:hover:not(:disabled) { border-color: var(--new); }
+
+#demo-next {
+  background: var(--new);
+  border-color: var(--new);
+  color: var(--on-new);
 }
 
 .demo-count {
