@@ -692,19 +692,32 @@ function actionKey(label, handler) {
 
 /** A game playing itself, drawn from the same tiles as the real board. */
 const DEMO_SEED = "plant";
+
+/**
+ * Choosing the last letter of a run drops it immediately, so the demo shows
+ * that letter as chosen for a beat first. Otherwise the whole selection
+ * appears and vanishes between two frames and the viewer never sees it.
+ */
+let demoPreview = [];
+
 const DEMO_STEPS = [
-  [() => {}, 1000],
-  [(g) => g.toggleSelect(1), 270],
-  [(g) => g.toggleSelect(2), 270],
-  [(g) => g.toggleSelect(3), 620],
-  [(g) => g.setLetter("d"), 560],
+  [() => { demoPreview = []; }, 1100],
+  [(g) => g.toggleSelect(1), 450],
+  [(g) => g.toggleSelect(2), 450],
+  [() => { demoPreview = [3]; }, 650],
+  [(g) => { demoPreview = []; g.toggleSelect(3); }, 700],
+  [(g) => g.setLetter("d"), 600],
   [(g) => g.submit(), 900],
-  [(g) => g.toggleSelect(0), 270],
-  [(g) => g.toggleSelect(1), 620],
-  [(g) => g.setLetter("b"), 560],
+
+  [(g) => g.toggleSelect(0), 450],
+  [() => { demoPreview = [1]; }, 650],
+  [(g) => { demoPreview = []; g.toggleSelect(1); }, 700],
+  [(g) => g.setLetter("b"), 600],
   [(g) => g.submit(), 900],
-  [(g) => g.toggleSelect(1), 620],
-  [(g) => g.setLetter("h"), 560],
+
+  [() => { demoPreview = [1]; }, 650],
+  [(g) => { demoPreview = []; g.toggleSelect(1); }, 700],
+  [(g) => g.setLetter("h"), 600],
   [(g) => g.submit(), 2400],
 ];
 
@@ -729,7 +742,9 @@ function drawDemo(g) {
       if (row.kept) {
         classes.push(index >= row.kept[0] && index < row.kept[1] ? "dropped" : "spent");
       }
-      if (i === g.rows.length - 1 && g.selection.includes(index)) classes.push("selected");
+      const onLastRow = i === g.rows.length - 1;
+      const chosen = g.phase === "select" && g.selection.includes(index);
+      if (onLastRow && (chosen || demoPreview.includes(index))) classes.push("selected");
       div.append(demoTile(letter, classes, index === addedIndex(row) ? letterValue(letter) : 0));
     });
     return div;
@@ -763,6 +778,7 @@ function playDemo() {
     // No looping animation for anyone who asked not to have one: show the
     // finished ladder instead.
     for (const [step] of DEMO_STEPS) step(g);
+    demoPreview = [];
     drawDemo(g);
     return;
   }
@@ -773,6 +789,7 @@ function playDemo() {
     if (!els.rules.open) return;   // nothing runs behind a closed dialog
     if (at >= DEMO_STEPS.length) {
       playing = new Game({ seed: DEMO_SEED });
+      demoPreview = [];
       at = 0;
     }
     const [step, hold] = DEMO_STEPS[at];
