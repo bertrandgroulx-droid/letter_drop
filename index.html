@@ -664,7 +664,7 @@ dialog {
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--ink);
-  padding: 1.25rem;
+  padding: 0 1.25rem 1.25rem;
 }
 
 dialog::backdrop { background: rgb(0 0 0 / 0.55); }
@@ -723,7 +723,22 @@ dialog::backdrop { background: rgb(0 0 0 / 0.55); }
   color: var(--ink-dim);
 }
 
-dialog h2 { margin-top: 0; font-family: var(--font-display); font-weight: 800; }
+/* Stays put while the instructions scroll, so the way out is always in reach. */
+.rules-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 -1.25rem 0.9rem;
+  padding: 1rem 1.25rem 0.75rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.rules-head h2 { margin: 0; font-family: var(--font-display); font-weight: 800; }
 dialog h3 { margin-bottom: 0.3rem; }
 dialog ul { padding-left: 1.2rem; margin-top: 0.3rem; }
 dialog li { margin-bottom: 0.3rem; }
@@ -784,7 +799,10 @@ dialog form { text-align: right; }
 
 
 <dialog id="rules">
-  <h2>How to play</h2>
+  <div class="rules-head">
+    <h2>How to play</h2>
+    <form method="dialog"><button class="ghost">Skip</button></form>
+  </div>
   <p>You start with a five-letter word. Each round you <b>drop</b> some of its
      letters down into the next word and add one more, making a word one letter
      shorter, until you are down to a single letter.</p>
@@ -881,7 +899,7 @@ dialog form { text-align: right; }
      stand gets a green ring. It is there to learn with, so a run played with
      hints on counts as practice and cannot be shared.</p>
 
-  <form method="dialog"><button class="primary">Got it</button></form>
+  <form method="dialog"><button class="primary">Skip</button></form>
 </dialog>
 
 <script type="module">

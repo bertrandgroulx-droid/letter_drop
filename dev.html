@@ -61,7 +61,10 @@
 
 
 <dialog id="rules">
-  <h2>How to play</h2>
+  <div class="rules-head">
+    <h2>How to play</h2>
+    <form method="dialog"><button class="ghost">Skip</button></form>
+  </div>
   <p>You start with a five-letter word. Each round you <b>drop</b> some of its
      letters down into the next word and add one more, making a word one letter
      shorter, until you are down to a single letter.</p>
@@ -158,7 +161,7 @@
      stand gets a green ring. It is there to learn with, so a run played with
      hints on counts as practice and cannot be shared.</p>
 
-  <form method="dialog"><button class="primary">Got it</button></form>
+  <form method="dialog"><button class="primary">Skip</button></form>
 </dialog>
 
 <script type="module" src="src/ui.js"></script>
