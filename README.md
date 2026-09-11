@@ -41,7 +41,9 @@ every added letter is a new one and marking it would say nothing.
 
 How to play opens with a miniature game playing itself, built from the same
 tiles, messages and classes as the real board rather than a recorded video. It
-runs one whole game in about twenty-five seconds, narrated a line at a time,
+runs one whole game in about a hundred seconds, narrated a line at a time and
+paced so each line can be read rather than glimpsed (`DEMO_PACE` in
+`src/ui.js` is the one knob),
 including a letter tried on the wrong end, the word list refusing it, a strike
 being spent, and the same letter working on the other end. The confirm check
 lights up along with it, so the control that commits a word is shown rather

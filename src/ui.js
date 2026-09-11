@@ -705,6 +705,9 @@ function actionKey(label, handler) {
 /** A game playing itself, drawn from the same tiles as the real board. */
 const DEMO_SEED = "plant";
 
+/** Multiplies every hold below. The steps have to be read, not just seen. */
+const DEMO_PACE = 4;
+
 /**
  * Choosing the last letter of a run drops it immediately, so the demo shows
  * that letter as chosen for a beat first. Otherwise the whole selection
@@ -842,7 +845,7 @@ function playDemo() {
     step(playing);
     at += 1;
     drawDemo(playing);
-    demoTimer = setTimeout(tick, hold);
+    demoTimer = setTimeout(tick, hold * DEMO_PACE);
   };
   tick();
 }
