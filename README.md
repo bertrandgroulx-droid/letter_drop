@@ -40,7 +40,10 @@ letters left behind fade out, because they are out of the game. The letter you a
 every added letter is a new one and marking it would say nothing.
 
 How to play opens with a miniature game playing itself, built from the same
-tiles and classes as the real board rather than a recorded video, so it cannot
+tiles, messages and classes as the real board rather than a recorded video. It
+runs one whole game in about twenty seconds, including a letter tried on the
+wrong end, the word list refusing it, a strike being spent, and the same letter
+working on the other end. Because it is the real game, so it cannot
 drift from how the game actually looks, follows the light and dark themes, and
 adds nothing to the page's weight. It stops when the dialog closes, and anyone
 who asks for reduced motion gets the finished ladder instead of a loop.

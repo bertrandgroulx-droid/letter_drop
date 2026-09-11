@@ -664,9 +664,22 @@ dialog::backdrop { background: rgb(0 0 0 / 0.55); }
   flex-direction: column;
   align-items: flex-start;
   gap: 0.75rem;
-  min-height: 11.5rem;
+  min-height: 12.6rem;
   overflow-x: auto;
 }
+
+.demo-note {
+  min-height: 2.4rem;
+  margin: 0.7rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--ink-dim);
+}
+
+.demo-note.error { color: var(--bad); }
+.demo-note b { color: var(--ink); }
+.demo-note.error b { color: inherit; }
+.demo .strikes { margin-top: 0.15rem; }
 
 .demo figcaption {
   margin-top: 0.6rem;

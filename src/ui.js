@@ -11,6 +11,8 @@ const els = {
   tallyDetail: document.getElementById("tally-detail"),
   breakdown: document.getElementById("breakdown"),
   demo: document.getElementById("demo"),
+  demoNote: document.getElementById("demo-note"),
+  demoStrikes: document.getElementById("demo-strikes"),
   result: document.getElementById("result"),
   hints: document.getElementById("hints"),
   level: document.getElementById("level"),
@@ -538,19 +540,26 @@ async function shareResult(button, box) {
   field.select();
 }
 
-function defaultNote() {
-  const word = game.currentWord.toUpperCase();
-  switch (game.phase) {
+function submitNote(result) {
+  const left = STRIKE_LIMIT - (result.strikes ?? 0);
+  if (!result.strikes) return result.reason;
+  return `${result.reason} ${left ? `${left} guess${left === 1 ? "" : "es"} left.` : "That is three."}`;
+}
+
+function defaultNote(g = game, alsoChosen = 0) {
+  const word = g.currentWord.toUpperCase();
+  switch (g.phase) {
     case "select": {
-      const need = game.keepCount;
-      const chosen = game.selection.length;
-      return `Drop <b>${need}</b> letter${need === 1 ? "" : "s"} in a row into ` +
-        `the next word. <b>${chosen}/${need}</b> chosen.`;
+      const need = g.keepCount;
+      const chosen = g.selection.length + alsoChosen;
+      // "one letter in a row" is nonsense, so the last round says it plainly.
+      const run = need === 1 ? "<b>1</b> letter" : `<b>${need}</b> letters in a row`;
+      return `Drop ${run} into the next word. <b>${chosen}/${need}</b> chosen.`;
     }
     case "build": {
-      const where = game.side === "front" ? "in front of" : "behind";
-      return `Add an <b>unused</b> letter ${where} ${game.block.toUpperCase()} ` +
-        `to make a ${game.block.length + 1}-letter word.`;
+      const where = g.side === "front" ? "in front of" : "behind";
+      return `Add an <b>unused</b> letter ${where} ${g.block.toUpperCase()} ` +
+        `to make a ${g.block.length + 1}-letter word.`;
     }
     case "stuck":
       return `No word can be made from <b>${word}</b>. Undo and drop a ` +
@@ -700,25 +709,36 @@ const DEMO_SEED = "plant";
  */
 let demoPreview = [];
 
+let demoNote = "";
+
 const DEMO_STEPS = [
-  [() => { demoPreview = []; }, 1100],
-  [(g) => g.toggleSelect(1), 450],
-  [(g) => g.toggleSelect(2), 450],
-  [() => { demoPreview = [3]; }, 650],
-  [(g) => { demoPreview = []; g.toggleSelect(3); }, 700],
-  [(g) => g.setLetter("d"), 600],
+  [() => { demoPreview = []; demoNote = ""; }, 1000],
+
+  // Round one: pick a run, try the wrong end, and pay a strike for it.
+  [(g) => g.toggleSelect(1), 420],
+  [(g) => g.toggleSelect(2), 420],
+  [() => { demoPreview = [3]; }, 620],
+  [(g) => { demoPreview = []; g.toggleSelect(3); }, 750],
+  [(g) => g.setSide("front"), 650],
+  [(g) => g.setLetter("b"), 620],
+  [(g) => { demoNote = submitNote(g.submit()); }, 2100],
+  [(g) => { demoNote = ""; g.setSide("end"); }, 800],
+  [(g) => g.setLetter("d"), 620],
   [(g) => g.submit(), 900],
 
-  [(g) => g.toggleSelect(0), 450],
-  [() => { demoPreview = [1]; }, 650],
-  [(g) => { demoPreview = []; g.toggleSelect(1); }, 700],
-  [(g) => g.setLetter("b"), 600],
+  // Round two: the front is the right end this time.
+  [(g) => g.toggleSelect(1), 420],
+  [() => { demoPreview = [2]; }, 620],
+  [(g) => { demoPreview = []; g.toggleSelect(2); }, 750],
+  [(g) => g.setSide("front"), 650],
+  [(g) => g.setLetter("c"), 620],
   [(g) => g.submit(), 900],
 
-  [() => { demoPreview = [1]; }, 650],
-  [(g) => { demoPreview = []; g.toggleSelect(1); }, 700],
-  [(g) => g.setLetter("h"), 600],
-  [(g) => g.submit(), 2400],
+  // Round three, then the last letter drops on its own.
+  [() => { demoPreview = [1]; }, 620],
+  [(g) => { demoPreview = []; g.toggleSelect(1); }, 750],
+  [(g) => g.setLetter("h"), 620],
+  [(g) => g.submit(), 2600],
 ];
 
 function demoTile(letter, classes, value) {
@@ -765,6 +785,13 @@ function drawDemo(g) {
     rows.push(draft);
   }
   els.demo.replaceChildren(...rows);
+  els.demoNote.innerHTML = demoNote || defaultNote(g, demoPreview.length);
+  els.demoNote.classList.toggle("error", Boolean(demoNote));
+  els.demoStrikes.replaceChildren(...Array.from({ length: STRIKE_LIMIT }, (_, i) => {
+    const mark = document.createElement("i");
+    mark.className = i < g.strikes ? "strike used" : "strike";
+    return mark;
+  }));
 }
 
 let demoTimer = null;
@@ -779,6 +806,7 @@ function playDemo() {
     // finished ladder instead.
     for (const [step] of DEMO_STEPS) step(g);
     demoPreview = [];
+    demoNote = "";
     drawDemo(g);
     return;
   }
@@ -790,6 +818,7 @@ function playDemo() {
     if (at >= DEMO_STEPS.length) {
       playing = new Game({ seed: DEMO_SEED });
       demoPreview = [];
+      demoNote = "";
       at = 0;
     }
     const [step, hold] = DEMO_STEPS[at];
@@ -832,10 +861,7 @@ function onEnter() {
 
   const result = game.submit();
   if (!result.ok) {
-    const left = STRIKE_LIMIT - (result.strikes ?? 0);
-    setNote(result.strikes
-      ? `${result.reason} ${left ? `${left} guess${left === 1 ? "" : "es"} left.` : "That is three."}`
-      : result.reason, true);
+    setNote(submitNote(result), true);
     render();
     return shakeDraft();
   }
