@@ -10,6 +10,7 @@ const els = {
   undo: document.getElementById("undo"),
   tallyDetail: document.getElementById("tally-detail"),
   breakdown: document.getElementById("breakdown"),
+  demo: document.getElementById("demo"),
   result: document.getElementById("result"),
   hints: document.getElementById("hints"),
   level: document.getElementById("level"),
@@ -89,11 +90,11 @@ function tileClasses(row, index, isCurrent) {
  * arrows point at the real thing. Rows step left and right as a result, which
  * is the shape of the run rather than a tidy funnel.
  */
-function boardLayout() {
+function boardLayout(g = game) {
   const offsets = [0];
-  game.rows.forEach((row, i) => {
+  g.rows.forEach((row, i) => {
     if (!row.kept) return;
-    const next = game.rows[i + 1];
+    const next = g.rows[i + 1];
     // A committed row puts the block after the added letter only when that
     // letter went in front. A draft row always shows its front slot.
     const blockStart = next ? (next.added?.side === "front" ? 1 : 0) : 1;
@@ -103,8 +104,8 @@ function boardLayout() {
   const leftmost = Math.min(...offsets);
   const placed = offsets.map((offset) => offset - leftmost);
 
-  const widths = game.rows.map((row) => row.word.length);
-  if (game.phase === "build") widths.push(game.block.length + 2);
+  const widths = g.rows.map((row) => row.word.length);
+  if (g.phase === "build") widths.push(g.block.length + 2);
   const extent = Math.max(...widths.map((width, i) => width + placed[i]));
 
   return { offsets: placed, extent };
@@ -687,6 +688,102 @@ function actionKey(label, handler) {
   return key;
 }
 
+/* ---------- the demo in the instructions ---------- */
+
+/** A game playing itself, drawn from the same tiles as the real board. */
+const DEMO_SEED = "plant";
+const DEMO_STEPS = [
+  [() => {}, 1000],
+  [(g) => g.toggleSelect(1), 270],
+  [(g) => g.toggleSelect(2), 270],
+  [(g) => g.toggleSelect(3), 620],
+  [(g) => g.setLetter("d"), 560],
+  [(g) => g.submit(), 900],
+  [(g) => g.toggleSelect(0), 270],
+  [(g) => g.toggleSelect(1), 620],
+  [(g) => g.setLetter("b"), 560],
+  [(g) => g.submit(), 900],
+  [(g) => g.toggleSelect(1), 620],
+  [(g) => g.setLetter("h"), 560],
+  [(g) => g.submit(), 2400],
+];
+
+function demoTile(letter, classes, value) {
+  const tile = document.createElement("div");
+  tile.className = classes.join(" ");
+  if (letter) tile.textContent = letter;
+  if (value) tile.dataset.value = value;
+  return tile;
+}
+
+function drawDemo(g) {
+  const layout = boardLayout(g);
+  els.demo.style.setProperty("--extent", layout.extent);
+
+  const rows = g.rows.map((row, i) => {
+    const div = document.createElement("div");
+    div.className = "row";
+    div.style.setProperty("--offset", layout.offsets[i]);
+    [...row.word].forEach((letter, index) => {
+      const classes = ["tile"];
+      if (row.kept) {
+        classes.push(index >= row.kept[0] && index < row.kept[1] ? "dropped" : "spent");
+      }
+      if (i === g.rows.length - 1 && g.selection.includes(index)) classes.push("selected");
+      div.append(demoTile(letter, classes, index === addedIndex(row) ? letterValue(letter) : 0));
+    });
+    return div;
+  });
+
+  if (g.phase === "build") {
+    const draft = document.createElement("div");
+    draft.className = "row";
+    draft.style.setProperty("--offset", layout.offsets[g.rows.length]);
+    const slot = (side) => {
+      const filled = g.side === side && g.letter;
+      const classes = ["tile", "slot"];
+      if (g.side === side) classes.push("active");
+      if (filled) classes.push("filled");
+      return demoTile(filled ? g.letter : "", classes, filled ? letterValue(g.letter) : 0);
+    };
+    draft.append(slot("front"), ...[...g.block].map((c) => demoTile(c, ["tile"], 0)), slot("end"));
+    rows.push(draft);
+  }
+  els.demo.replaceChildren(...rows);
+}
+
+let demoTimer = null;
+
+function playDemo() {
+  clearTimeout(demoTimer);
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const g = new Game({ seed: DEMO_SEED });
+
+  if (still) {
+    // No looping animation for anyone who asked not to have one: show the
+    // finished ladder instead.
+    for (const [step] of DEMO_STEPS) step(g);
+    drawDemo(g);
+    return;
+  }
+
+  let at = 0;
+  let playing = new Game({ seed: DEMO_SEED });
+  const tick = () => {
+    if (!els.rules.open) return;   // nothing runs behind a closed dialog
+    if (at >= DEMO_STEPS.length) {
+      playing = new Game({ seed: DEMO_SEED });
+      at = 0;
+    }
+    const [step, hold] = DEMO_STEPS[at];
+    step(playing);
+    at += 1;
+    drawDemo(playing);
+    demoTimer = setTimeout(tick, hold);
+  };
+  tick();
+}
+
 /* ---------- actions ---------- */
 
 function setNote(text, isError = false) {
@@ -749,6 +846,7 @@ function onBackspace() {
 function openRules() {
   els.rules.showModal();
   els.rules.scrollTop = 0;
+  playDemo();
 }
 
 function onGiveUp() {
@@ -832,6 +930,7 @@ els.level.addEventListener("input", () => {
 els.giveUp.addEventListener("click", onGiveUp);
 els.hints.addEventListener("click", toggleHints);
 els.howTo.addEventListener("click", openRules);
+els.rules.addEventListener("close", () => clearTimeout(demoTimer));
 
 document.addEventListener("keydown", (event) => {
   if (event.metaKey || event.ctrlKey || event.altKey || els.rules.open) return;

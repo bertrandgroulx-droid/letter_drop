@@ -39,6 +39,12 @@ Once it has dropped, those tiles turn grey with an arrow beneath them, and the
 letters left behind fade out, because they are out of the game. The letter you add carries no marking of its own beyond its value, since
 every added letter is a new one and marking it would say nothing.
 
+How to play opens with a miniature game playing itself, built from the same
+tiles and classes as the real board rather than a recorded video, so it cannot
+drift from how the game actually looks, follows the light and dark themes, and
+adds nothing to the page's weight. It stops when the dialog closes, and anyone
+who asks for reduced motion gets the finished ladder instead of a loop.
+
 ## The one thing to plan for
 
 You cannot reach a single letter unless the two-letter word contains an A or
