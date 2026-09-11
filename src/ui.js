@@ -14,6 +14,9 @@ const els = {
   demoCoach: document.getElementById("demo-coach"),
   demoNote: document.getElementById("demo-note"),
   demoStrikes: document.getElementById("demo-strikes"),
+  demoBack: document.getElementById("demo-back"),
+  demoNext: document.getElementById("demo-next"),
+  demoCount: document.getElementById("demo-count"),
   result: document.getElementById("result"),
   hints: document.getElementById("hints"),
   level: document.getElementById("level"),
@@ -702,50 +705,70 @@ function actionKey(label, handler) {
 
 /* ---------- the demo in the instructions ---------- */
 
-/** A game playing itself, drawn from the same tiles as the real board. */
+/** A game walked through a step at a time, at the reader's pace. */
 const DEMO_SEED = "plant";
 
-/** Multiplies every hold below. The steps have to be read, not just seen. */
-const DEMO_PACE = 4;
-
-/**
- * Choosing the last letter of a run drops it immediately, so the demo shows
- * that letter as chosen for a beat first. Otherwise the whole selection
- * appears and vanishes between two frames and the viewer never sees it.
- */
 let demoPreview = [];
-
 let demoNote = "";
 let demoCoach = "";
+let demoAt = 0;
 
+/**
+ * Each step is everything that happens between one press of Next and the
+ * next, so a step is a thought rather than a keystroke. Going back replays
+ * from the start, which keeps every step a pure function of its index.
+ */
 const DEMO_STEPS = [
-  [() => { demoPreview = []; demoNote = ""; }, 1300, "You are dealt a five-letter word."],
-
-  // Round one: pick a run, try the wrong end, and pay a strike for it.
-  [(g) => g.toggleSelect(1), 560, "Tap three letters in a row."],
-  [(g) => g.toggleSelect(2), 560],
-  [() => { demoPreview = [3]; }, 900],
-  [(g) => { demoPreview = []; g.toggleSelect(3); }, 1100, "They drop into your next word."],
-  [(g) => g.setSide("front"), 1000, "Your letter goes on either end. Tap a slot to pick one."],
-  [(g) => g.setLetter("b"), 950, "Then tap the check."],
-  [(g) => { demoNote = submitNote(g.submit()); }, 3000, "Not a word. That spends one of your three guesses."],
-  [(g) => { demoNote = ""; g.setSide("end"); }, 1200, "So try the other end."],
-  [(g) => g.setLetter("d"), 850],
-  [(g) => g.submit(), 1400, "LAND. Two points for the word, two more for the D."],
-
-  // Round two: this time the front is the end that works.
-  [(g) => g.toggleSelect(1), 560, "Two letters this round."],
-  [() => { demoPreview = [2]; }, 900],
-  [(g) => { demoPreview = []; g.toggleSelect(2); }, 1100],
-  [(g) => g.setSide("front"), 1000, "The front is the one that works here."],
-  [(g) => g.setLetter("c"), 850],
-  [(g) => g.submit(), 1400],
-
-  // Round three, then the last letter drops on its own.
-  [() => { demoPreview = [1]; }, 900, "One letter now."],
-  [(g) => { demoPreview = []; g.toggleSelect(1); }, 1100],
-  [(g) => g.setLetter("h"), 850],
-  [(g) => g.submit(), 3200, "AH holds an A, and A is a word on its own, so it drops. Done."],
+  {
+    coach: "You are dealt a five-letter word. Each round you drop some of its letters into a shorter one.",
+    play: () => {},
+  },
+  {
+    coach: "Tap three letters in a row. They have to be side by side.",
+    play: (g) => { g.toggleSelect(1); g.toggleSelect(2); demoPreview = [3]; },
+  },
+  {
+    coach: "They drop into your next word. Whatever you leave behind is gone.",
+    play: (g) => { demoPreview = []; g.toggleSelect(3); },
+  },
+  {
+    coach: "Now add one letter. It goes on an end, never in the middle. Tap a slot to choose the end.",
+    play: (g) => { g.setSide("front"); g.setLetter("b"); },
+  },
+  {
+    coach: "Tap the check to try it. BLAN is not a word, and a wrong guess spends one of your three.",
+    play: (g) => { demoNote = submitNote(g.submit()); },
+  },
+  {
+    coach: "So try the other end instead.",
+    play: (g) => { demoNote = ""; g.setSide("end"); g.setLetter("d"); },
+  },
+  {
+    coach: "LAND. Two points for the word, and two more for the D it brought in.",
+    play: (g) => g.submit(),
+  },
+  {
+    coach: "Two letters this round, and again one to add. Every letter already on the board is spent.",
+    play: (g) => { g.toggleSelect(1); demoPreview = [2]; },
+  },
+  {
+    coach: "This time the front is the end that works, making CAN.",
+    play: (g) => {
+      demoPreview = [];
+      g.toggleSelect(2);
+      g.setSide("front");
+      g.setLetter("c");
+      g.submit();
+    },
+  },
+  {
+    coach: "One letter now, and one to add.",
+    play: (g) => { demoPreview = [1]; },
+  },
+  {
+    coach: "AH holds an A, and A is a word on its own, so it drops. That is the whole game.",
+    play: (g) => { demoPreview = []; g.toggleSelect(1); g.setLetter("h"); g.submit(); },
+  },
 ];
 
 function demoTile(letter, classes, value) {
@@ -801,6 +824,7 @@ function drawDemo(g) {
     );
     rows.push(draft);
   }
+
   els.demo.replaceChildren(...rows);
   els.demoCoach.textContent = demoCoach;
   els.demoNote.innerHTML = demoNote || defaultNote(g, demoPreview.length);
@@ -810,44 +834,32 @@ function drawDemo(g) {
     mark.className = i < g.strikes ? "strike used" : "strike";
     return mark;
   }));
+
+  const last = DEMO_STEPS.length - 1;
+  els.demoBack.disabled = demoAt === 0;
+  if (els.demoBack.disabled && document.activeElement === els.demoBack) els.demoNext.focus();
+  els.demoNext.textContent = demoAt === last ? "Start again" : "Next";
+  els.demoCount.textContent = `${demoAt + 1} of ${DEMO_STEPS.length}`;
 }
 
-let demoTimer = null;
+/** Replays from the first step, so any step can be reached from any other. */
+function showDemoStep(at) {
+  demoAt = Math.max(0, Math.min(at, DEMO_STEPS.length - 1));
+  demoPreview = [];
+  demoNote = "";
+  demoCoach = "";
 
-function playDemo() {
-  clearTimeout(demoTimer);
-  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const g = new Game({ seed: DEMO_SEED });
-
-  if (still) {
-    // No looping animation for anyone who asked not to have one: show the
-    // finished ladder instead.
-    for (const [step] of DEMO_STEPS) step(g);
-    demoPreview = [];
-    demoNote = "";
-    demoCoach = DEMO_STEPS[DEMO_STEPS.length - 1][2];
-    drawDemo(g);
-    return;
+  for (let i = 0; i <= demoAt; i += 1) {
+    demoCoach = DEMO_STEPS[i].coach ?? demoCoach;
+    DEMO_STEPS[i].play(g);
   }
+  drawDemo(g);
+}
 
-  let at = 0;
-  let playing = new Game({ seed: DEMO_SEED });
-  const tick = () => {
-    if (!els.rules.open) return;   // nothing runs behind a closed dialog
-    if (at >= DEMO_STEPS.length) {
-      playing = new Game({ seed: DEMO_SEED });
-      demoPreview = [];
-      demoNote = "";
-      at = 0;
-    }
-    const [step, hold, coach] = DEMO_STEPS[at];
-    if (coach) demoCoach = coach;
-    step(playing);
-    at += 1;
-    drawDemo(playing);
-    demoTimer = setTimeout(tick, hold * DEMO_PACE);
-  };
-  tick();
+function stepDemo(by) {
+  const last = DEMO_STEPS.length - 1;
+  showDemoStep(demoAt === last && by > 0 ? 0 : demoAt + by);
 }
 
 /* ---------- actions ---------- */
@@ -909,7 +921,7 @@ function onBackspace() {
 function openRules() {
   els.rules.showModal();
   els.rules.scrollTop = 0;
-  playDemo();
+  showDemoStep(0);
 }
 
 function onGiveUp() {
@@ -993,10 +1005,24 @@ els.level.addEventListener("input", () => {
 els.giveUp.addEventListener("click", onGiveUp);
 els.hints.addEventListener("click", toggleHints);
 els.howTo.addEventListener("click", openRules);
-els.rules.addEventListener("close", () => clearTimeout(demoTimer));
+els.demoBack.addEventListener("click", () => stepDemo(-1));
+els.demoNext.addEventListener("click", () => stepDemo(1));
+
 
 document.addEventListener("keydown", (event) => {
-  if (event.metaKey || event.ctrlKey || event.altKey || els.rules.open) return;
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+  // While the instructions are open the arrows walk the guide. This lives on
+  // the document because disabling Back moves focus out of the dialog, and a
+  // listener on the dialog would never hear the key.
+  if (els.rules.open) {
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      stepDemo(event.key === "ArrowRight" ? 1 : -1);
+    }
+    return;
+  }
+
   const key = event.key;
   if (/^[a-zA-Z]$/.test(key)) {
     typeLetter(key.toLowerCase());

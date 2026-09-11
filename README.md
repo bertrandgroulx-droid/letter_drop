@@ -40,10 +40,10 @@ letters left behind fade out, because they are out of the game. The letter you a
 every added letter is a new one and marking it would say nothing.
 
 How to play opens with a miniature game playing itself, built from the same
-tiles, messages and classes as the real board rather than a recorded video. It
-runs one whole game in about a hundred seconds, narrated a line at a time and
-paced so each line can be read rather than glimpsed (`DEMO_PACE` in
-`src/ui.js` is the one knob),
+tiles, messages and classes as the real board rather than a recorded video. It walks
+one whole game in eleven steps, with Next and Back and the arrow keys, so the
+reader sets the pace rather than the page. Each step replays from the first,
+which keeps a step a pure function of its index and makes Back exact,
 including a letter tried on the wrong end, the word list refusing it, a strike
 being spent, and the same letter working on the other end. The confirm check
 lights up along with it, so the control that commits a word is shown rather
