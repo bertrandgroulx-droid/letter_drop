@@ -11,6 +11,7 @@ const els = {
   tallyDetail: document.getElementById("tally-detail"),
   breakdown: document.getElementById("breakdown"),
   demo: document.getElementById("demo"),
+  demoCoach: document.getElementById("demo-coach"),
   demoNote: document.getElementById("demo-note"),
   demoStrikes: document.getElementById("demo-strikes"),
   result: document.getElementById("result"),
@@ -178,6 +179,9 @@ function renderDraft(offset) {
   return div;
 }
 
+const CHECK_SVG =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.7 4.7L19 7"/></svg>';
+
 /** Lights up only once a letter is in place. */
 function renderConfirm() {
   const button = document.createElement("button");
@@ -188,8 +192,7 @@ function renderConfirm() {
     "aria-label",
     game.letter ? `Make ${game.draftWord.toUpperCase()}` : "Make the word"
   );
-  button.innerHTML =
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.7 4.7L19 7"/></svg>';
+  button.innerHTML = CHECK_SVG;
   button.addEventListener("click", onEnter);
   return button;
 }
@@ -710,35 +713,36 @@ const DEMO_SEED = "plant";
 let demoPreview = [];
 
 let demoNote = "";
+let demoCoach = "";
 
 const DEMO_STEPS = [
-  [() => { demoPreview = []; demoNote = ""; }, 1000],
+  [() => { demoPreview = []; demoNote = ""; }, 1300, "You are dealt a five-letter word."],
 
   // Round one: pick a run, try the wrong end, and pay a strike for it.
-  [(g) => g.toggleSelect(1), 420],
-  [(g) => g.toggleSelect(2), 420],
-  [() => { demoPreview = [3]; }, 620],
-  [(g) => { demoPreview = []; g.toggleSelect(3); }, 750],
-  [(g) => g.setSide("front"), 650],
-  [(g) => g.setLetter("b"), 620],
-  [(g) => { demoNote = submitNote(g.submit()); }, 2100],
-  [(g) => { demoNote = ""; g.setSide("end"); }, 800],
-  [(g) => g.setLetter("d"), 620],
-  [(g) => g.submit(), 900],
+  [(g) => g.toggleSelect(1), 560, "Tap three letters in a row."],
+  [(g) => g.toggleSelect(2), 560],
+  [() => { demoPreview = [3]; }, 900],
+  [(g) => { demoPreview = []; g.toggleSelect(3); }, 1100, "They drop into your next word."],
+  [(g) => g.setSide("front"), 1000, "Your letter goes on either end. Tap a slot to pick one."],
+  [(g) => g.setLetter("b"), 950, "Then tap the check."],
+  [(g) => { demoNote = submitNote(g.submit()); }, 3000, "Not a word. That spends one of your three guesses."],
+  [(g) => { demoNote = ""; g.setSide("end"); }, 1200, "So try the other end."],
+  [(g) => g.setLetter("d"), 850],
+  [(g) => g.submit(), 1400, "LAND. Two points for the word, two more for the D."],
 
-  // Round two: the front is the right end this time.
-  [(g) => g.toggleSelect(1), 420],
-  [() => { demoPreview = [2]; }, 620],
-  [(g) => { demoPreview = []; g.toggleSelect(2); }, 750],
-  [(g) => g.setSide("front"), 650],
-  [(g) => g.setLetter("c"), 620],
-  [(g) => g.submit(), 900],
+  // Round two: this time the front is the end that works.
+  [(g) => g.toggleSelect(1), 560, "Two letters this round."],
+  [() => { demoPreview = [2]; }, 900],
+  [(g) => { demoPreview = []; g.toggleSelect(2); }, 1100],
+  [(g) => g.setSide("front"), 1000, "The front is the one that works here."],
+  [(g) => g.setLetter("c"), 850],
+  [(g) => g.submit(), 1400],
 
   // Round three, then the last letter drops on its own.
-  [() => { demoPreview = [1]; }, 620],
-  [(g) => { demoPreview = []; g.toggleSelect(1); }, 750],
-  [(g) => g.setLetter("h"), 620],
-  [(g) => g.submit(), 2600],
+  [() => { demoPreview = [1]; }, 900, "One letter now."],
+  [(g) => { demoPreview = []; g.toggleSelect(1); }, 1100],
+  [(g) => g.setLetter("h"), 850],
+  [(g) => g.submit(), 3200, "AH holds an A, and A is a word on its own, so it drops. Done."],
 ];
 
 function demoTile(letter, classes, value) {
@@ -781,10 +785,21 @@ function drawDemo(g) {
       if (filled) classes.push("filled");
       return demoTile(filled ? g.letter : "", classes, filled ? letterValue(g.letter) : 0);
     };
-    draft.append(slot("front"), ...[...g.block].map((c) => demoTile(c, ["tile"], 0)), slot("end"));
+    const check = document.createElement("button");
+    check.className = "confirm";
+    check.disabled = !g.letter;
+    check.tabIndex = -1;
+    check.innerHTML = CHECK_SVG;
+    draft.append(
+      slot("front"),
+      ...[...g.block].map((c) => demoTile(c, ["tile"], 0)),
+      slot("end"),
+      check
+    );
     rows.push(draft);
   }
   els.demo.replaceChildren(...rows);
+  els.demoCoach.textContent = demoCoach;
   els.demoNote.innerHTML = demoNote || defaultNote(g, demoPreview.length);
   els.demoNote.classList.toggle("error", Boolean(demoNote));
   els.demoStrikes.replaceChildren(...Array.from({ length: STRIKE_LIMIT }, (_, i) => {
@@ -807,6 +822,7 @@ function playDemo() {
     for (const [step] of DEMO_STEPS) step(g);
     demoPreview = [];
     demoNote = "";
+    demoCoach = DEMO_STEPS[DEMO_STEPS.length - 1][2];
     drawDemo(g);
     return;
   }
@@ -821,7 +837,8 @@ function playDemo() {
       demoNote = "";
       at = 0;
     }
-    const [step, hold] = DEMO_STEPS[at];
+    const [step, hold, coach] = DEMO_STEPS[at];
+    if (coach) demoCoach = coach;
     step(playing);
     at += 1;
     drawDemo(playing);

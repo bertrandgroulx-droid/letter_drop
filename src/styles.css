@@ -657,9 +657,21 @@ dialog::backdrop { background: rgb(0 0 0 / 0.55); }
   background: var(--bg);
 }
 
+.demo-coach {
+  min-height: 2.5rem;
+  margin: 0 0 0.7rem;
+  padding: 0.45rem 0.6rem;
+  border-left: 3px solid var(--keep);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: color-mix(in srgb, var(--keep) 12%, transparent);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 .demo-board {
   --tile: 1.9rem;
   --gap: 0.28rem;
+  padding-right: 2.5rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -680,6 +692,9 @@ dialog::backdrop { background: rgb(0 0 0 / 0.55); }
 .demo-note b { color: var(--ink); }
 .demo-note.error b { color: inherit; }
 .demo .strikes { margin-top: 0.15rem; }
+
+.demo-board .confirm { width: 1.7rem; height: 1.7rem; left: calc(100% + 0.45rem); }
+.demo-board .confirm svg { width: 0.85rem; height: 0.85rem; }
 
 .demo figcaption {
   margin-top: 0.6rem;
