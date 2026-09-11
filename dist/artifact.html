@@ -19,7 +19,15 @@
   /* Text laid on a solid --new fill. The green lightens in dark mode, so the
      ink flips with it rather than staying white. */
   --on-new: #ffffff;
+  --new-edge: #0f6b42;
+  --keep-edge: #a96406;
   --bad: #cc3a2b;
+
+  /* The face of a button. Deeper than the page, so a control reads as raised
+     rather than as another card lying on it. */
+  --btn: #ebe4d6;
+  --btn-line: #cbc0aa;
+  --btn-ink: #26222d;
 
   --font-display: "Bricolage Grotesque", "Public Sans", ui-sans-serif, system-ui, sans-serif;
   --font-ui: "Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -40,7 +48,12 @@
     --new: #4bcb8c;
     --new-ink: #06301b;
     --on-new: #06301b;
+    --new-edge: #2e9c68;
+    --keep-edge: #c07f20;
     --bad: #f2796d;
+    --btn: #343040;
+    --btn-line: #4b4459;
+    --btn-ink: #f0ecf2;
   }
 }
 
@@ -55,7 +68,12 @@
     --new: #4bcb8c;
     --new-ink: #06301b;
     --on-new: #06301b;
+    --new-edge: #2e9c68;
+    --keep-edge: #c07f20;
     --bad: #f2796d;
+    --btn: #343040;
+    --btn-line: #4b4459;
+    --btn-ink: #f0ecf2;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -267,12 +285,42 @@ button {
   padding: 0.35rem 0.75rem;
 }
 
-button:hover:not(:disabled) { border-color: var(--ink-dim); }
-button:disabled { opacity: 0.4; cursor: default; }
-button.primary { background: var(--new); border-color: var(--new); color: var(--on-new); font-weight: 600; }
-button.quiet { background: var(--surface); border-color: var(--line); color: var(--ink-dim); }
-button.quiet:hover { color: var(--ink); }
+button:disabled { cursor: default; }
+
+/* Every button you press to run the game: filled, weighted and sitting on a
+   lip of shadow. White-on-cream with a hairline border read as a label, and
+   people did not know they were allowed to touch it. The tiles and keys keep
+   their own look, so a control never gets mistaken for a letter. */
+.ghost, .primary, .quiet {
+  background: var(--btn);
+  border-color: var(--btn-line);
+  color: var(--btn-ink);
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  min-height: 2.2rem;
+  box-shadow: 0 1.5px 0 var(--btn-line);
+  transition: transform 0.06s ease, box-shadow 0.06s ease, filter 0.12s ease;
+}
+
+.ghost:hover:not(:disabled),
+.primary:hover:not(:disabled),
+.quiet:hover:not(:disabled) { filter: brightness(0.96); }
+
+/* The lip flattens under the press, so the button moves when you touch it. */
+.ghost:active:not(:disabled),
+.primary:active:not(:disabled),
+.quiet:active:not(:disabled) { transform: translateY(1.5px); box-shadow: none; }
+
+.ghost:disabled, .primary:disabled, .quiet:disabled { opacity: 0.35; box-shadow: none; }
+
+button.primary { background: var(--new); border-color: var(--new); color: var(--on-new); box-shadow: 0 1.5px 0 var(--new-edge); }
+button.quiet { color: var(--ink-dim); }
+button.quiet:hover:not(:disabled) { color: var(--ink); }
 .ghost { font-size: 0.85rem; }
+
+/* The one button that ends the run rather than advancing it. Once armed it
+   takes the amber warning fill, so the red steps aside. */
+#give-up:not(.armed) { color: var(--bad); }
 
 .visually-hidden {
   position: absolute;
@@ -281,12 +329,10 @@ button.quiet:hover { color: var(--ink); }
   overflow: hidden;
   clip-path: inset(50%);
 }
-.ghost.on { background: var(--new); border-color: var(--new); color: var(--on-new); }
-.ghost.on:hover { border-color: var(--new); }
+.ghost.on { background: var(--new); border-color: var(--new); color: var(--on-new); box-shadow: 0 1.5px 0 var(--new-edge); }
 
 /* Half-pressed: one more tap and it happens. */
-.ghost.armed { background: var(--keep); border-color: var(--keep); color: var(--keep-ink); }
-.ghost.armed:hover { border-color: var(--keep); }
+.ghost.armed { background: var(--keep); border-color: var(--keep); color: var(--keep-ink); box-shadow: 0 1.5px 0 var(--keep-edge); }
 
 /* ---------- board ---------- */
 
@@ -423,10 +469,12 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
   stroke-linejoin: round;
 }
 
-.row-lookup { background: var(--surface); }
-.row-lookup .book { width: 1.1rem; height: 1.1rem; opacity: 0.7; stroke-width: 1.5; }
-.row-lookup:hover, .row-lookup.open { border-color: var(--new); color: var(--new); }
-.row-lookup:hover .book, .row-lookup.open .book { opacity: 1; }
+/* Filled like the rest of the controls: it is the button people miss, and it
+   is the one they want the moment a word they have never seen is accepted. */
+.row-lookup { background: var(--btn); border-color: var(--btn-line); color: var(--btn-ink); box-shadow: 0 1.5px 0 var(--btn-line); }
+.row-lookup .book { width: 1.1rem; height: 1.1rem; stroke-width: 1.8; }
+.row-lookup:hover, .row-lookup.open { background: var(--new); border-color: var(--new); color: var(--on-new); box-shadow: 0 1.5px 0 var(--new-edge); }
+.row-lookup:active { transform: translateY(1.5px); box-shadow: none; }
 
 .confirm:disabled { opacity: 0.4; }
 
@@ -494,7 +542,7 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 .reveal { margin-top: 0.7rem; animation: blink-twice 2s ease-in-out infinite; }
 
 @keyframes blink-twice {
-  0%, 14%, 28%, 100% { background: var(--surface); border-color: var(--line); color: var(--ink); }
+  0%, 14%, 28%, 100% { background: var(--btn); border-color: var(--btn-line); color: var(--btn-ink); }
   7%, 21% { background: var(--keep); border-color: var(--keep); color: var(--keep-ink); }
 }
 
@@ -714,20 +762,13 @@ dialog::backdrop { background: rgb(0 0 0 / 0.55); }
   margin-top: 0.7rem;
 }
 
-/* Green, like the game's own confirm and New game: these are controls you
-   drive, not a caption you watch go by. */
-.demo-nav button {
-  border-color: var(--new);
-  color: var(--new);
-  font-weight: 600;
-}
-
-.demo-nav button:hover:not(:disabled) { border-color: var(--new); }
-
+/* Next carries the green of every other go-ahead in the game; Back is a
+   plain filled button beside it. */
 #demo-next {
   background: var(--new);
   border-color: var(--new);
   color: var(--on-new);
+  box-shadow: 0 1.5px 0 var(--new-edge);
 }
 
 .demo-count {
@@ -784,7 +825,7 @@ dialog form { text-align: right; }
     <button type="button" id="hints" class="ghost" aria-pressed="false"
             title="Ring every letter that makes a word from here. A run played with hints on counts as practice and cannot be shared.">Hints</button>
     <button type="button" id="how-to" class="ghost">How to play</button>
-    <button type="button" id="new-game" class="ghost">New game</button>
+    <button type="button" id="new-game" class="ghost primary">New game</button>
   </div>
 </header>
 
