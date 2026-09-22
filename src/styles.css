@@ -138,6 +138,10 @@ h1 {
   text-transform: uppercase;
 }
 
+/* The title and the studio credit, stacked and centred on each other. The bar
+   does not get taller for it: its height was already set by the buttons. */
+.bar-left { display: flex; flex-direction: column; align-items: center; }
+
 .bar-right { display: flex; align-items: center; gap: 0.5rem; }
 
 /* ---------- level ---------- */

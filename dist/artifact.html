@@ -158,6 +158,10 @@ h1 {
   text-transform: uppercase;
 }
 
+/* The title and the studio credit, stacked and centred on each other. The bar
+   does not get taller for it: its height was already set by the buttons. */
+.bar-left { display: flex; flex-direction: column; align-items: center; }
+
 .bar-right { display: flex; align-items: center; gap: 0.5rem; }
 
 /* ---------- level ---------- */
@@ -835,7 +839,13 @@ dialog li { margin-bottom: 0.3rem; }
 dialog form { text-align: right; }
 </style>
 <header class="bar">
-  <h1>Letter&nbsp;Drop</h1>
+  <!-- The title has its own box so the studio credit, which the kit inserts
+       just after the h1, stacks underneath it. Left bare in the bar, which is
+       a wrapping flex row, the credit would become a third item and strand
+       itself between the title and the buttons. -->
+  <div class="bar-left">
+    <h1>Letter&nbsp;Drop</h1>
+  </div>
   <div class="bar-right">
     <button type="button" id="hints" class="ghost" aria-pressed="false"
             title="Ring every letter that makes a word from here. A run played with hints on counts as practice and cannot be shared.">Hints</button>
@@ -2496,8 +2506,8 @@ render();
 
 <!-- The shozbot studio kit: the "back to shozbot" bar at the top, and visitor
      counting. One line, so both are changed in one place rather than seven. -->
-<!-- data-hide-standalone: installed to a home screen there is no browser to go
-     back to, and this game is built to fill exactly one phone screen — so the
-     bar drops out there and the layout is the same as it ever was. -->
-<script src="https://shozbot.com/kit/kit.js" data-app="Letter Drop"
-        data-hide-standalone defer></script>
+<!-- The studio kit. data-by replaces the bar with the words "by shozbot",
+     inserted just after the h1 and stacked under it by .bar-left. It borrows a
+     line this game already draws, so it costs no height, and it stays put when
+     the game is installed to a home screen. -->
+<script src="https://shozbot.com/kit/kit.js" data-by=".bar h1" defer></script>
