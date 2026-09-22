@@ -4,6 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Letter Drop</title>
+<link rel="canonical" href="https://shozbot.com/letter-drop/">
+<script>
+  /* This app lives at shozbot.com/letter-drop/ now. Anyone still arriving at the old
+     GitHub Pages address is moved across, so that scores, streaks and settings
+     — which a browser files under whichever address they were made on — pile up
+     in one place instead of quietly splitting in two.
+
+     The hostname test is load-bearing, not defensive. shozbot.com serves this
+     very file through a rewrite, so without the test the redirect would fire
+     there too and bounce the browser against the same address for ever. */
+  (function () {
+    if (location.hostname !== "bertrandgroulx-droid.github.io") return;
+    location.replace("https://shozbot.com/letter-drop/" + location.search + location.hash);
+  })();
+</script>
 <meta name="description" content="A word game. Drop letters through shorter and shorter words.">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPCEtLSBMZXR0ZXIgRHJvcC4gVGhlIGtlcHQgbGV0dGVyIHdhaXRzIHVwIHRvcCBpbiBhbWJlciwgdGhlIGFkZGVkIGxldHRlciBoYXMKICAgICAgIGZhbGxlbiB0byB0aGUgYm90dG9tIGluIGdyZWVuLCB0aXBwaW5nIG92ZXIgb24gdGhlIHdheSBkb3duLiAtLT4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNCIgZmlsbD0iIzFiMTgyMCIvPgoKICA8cmVjdCB4PSI3IiB5PSI2IiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHJ4PSI1LjUiIGZpbGw9IiNmMGE4M2EiLz4KICA8cGF0aCBmaWxsPSIjMWIxODIwIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMyAxMSkiIGQ9Ik0wIDBoMy41djEwLjVIOVYxNEgwWiIvPgogIDxnIHRyYW5zZm9ybT0icm90YXRlKDEyIDQ1IDQ0KSI+CiAgICA8cmVjdCB4PSIzMyIgeT0iMzIiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgcng9IjUuNSIgZmlsbD0iIzQ3Yzk4YSIvPgogICAgPHBhdGggZmlsbD0iIzFiMTgyMCIgZmlsbC1ydWxlPSJldmVub2RkIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzOSAzNykiCiAgICAgICAgICBkPSJNMCAwaDVhNyA3IDAgMCAxIDAgMTRIMFogTTMuNSAzLjVoMS41YTMuNSAzLjUgMCAwIDEgMCA3SDMuNVoiLz4KICA8L2c+Cjwvc3ZnPgo=">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">

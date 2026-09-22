@@ -1,4 +1,19 @@
 <title>Letter Drop</title>
+<link rel="canonical" href="https://shozbot.com/letter-drop/">
+<script>
+  /* This app lives at shozbot.com/letter-drop/ now. Anyone still arriving at the old
+     GitHub Pages address is moved across, so that scores, streaks and settings
+     — which a browser files under whichever address they were made on — pile up
+     in one place instead of quietly splitting in two.
+
+     The hostname test is load-bearing, not defensive. shozbot.com serves this
+     very file through a rewrite, so without the test the redirect would fire
+     there too and bounce the browser against the same address for ever. */
+  (function () {
+    if (location.hostname !== "bertrandgroulx-droid.github.io") return;
+    location.replace("https://shozbot.com/letter-drop/" + location.search + location.hash);
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@400;600&display=swap">
