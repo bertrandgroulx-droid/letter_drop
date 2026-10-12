@@ -81,6 +81,16 @@ export function randomSeed(level = DEFAULT_LEVEL, random = Math.random) {
   return pool[Math.floor(random() * pool.length)];
 }
 
+/**
+ * The day's opening word: one draw from the default level's pool with the
+ * day's seeded generator, so everyone who opens the game that day is dealt
+ * the same word. The generator comes from the shozbot daily kit; it is passed
+ * in rather than imported so the rules stay free of anything outside them.
+ */
+export function dailyWord(random) {
+  return randomSeed(DEFAULT_LEVEL, random);
+}
+
 /** The letters that make a real word when added to `block` on `side`. */
 export function playableLetters(block, side, dictionary = DICTIONARY, used = NOTHING_USED) {
   const target = dictionary[block.length + 1];
@@ -147,8 +157,54 @@ export class Game {
     this.strikes = 0;
     this.hintsUsed = false;
     this.answerShown = false;
+    this.restored = false;
     this.best = null;
     this.refreshPhase();
+  }
+
+  /**
+   * Over for good: nothing more can happen to the score. Reaching a single
+   * letter, giving up, striking out, or looking at a perfect run all close a
+   * run. A dead end does not, because undo is the way out of one.
+   */
+  get isClosed() {
+    return ["won", "gaveup", "struckout"].includes(this.phase) || this.answerShown;
+  }
+
+  /**
+   * Everything needed to show this run again later: the rows as played, and
+   * the state that cannot be worked out from them. Saved with a daily score,
+   * so a day that has been played opens on its board rather than a bare
+   * number.
+   */
+  get record() {
+    return {
+      rows: this.rows.map((row) => ({ word: row.word, added: row.added, kept: row.kept })),
+      undos: this.undos,
+      strikes: this.strikes,
+      phase: this.phase,
+      answerShown: this.answerShown,
+    };
+  }
+
+  /**
+   * A run rebuilt from `record`. It comes back closed: a saved day is a
+   * record of what happened, not a game to carry on with, so undo is off.
+   * A record that does not fit the seed, or was never written, gives a fresh
+   * game instead of a broken one.
+   */
+  static restore(seed, record, dictionary = DICTIONARY) {
+    const game = new Game({ seed, dictionary });
+    const rows = record?.rows;
+    if (!Array.isArray(rows) || rows.length === 0 || rows[0]?.word !== seed) return game;
+    game.rows = rows.map((row) => ({ word: row.word, added: row.added ?? null, kept: row.kept ?? null }));
+    game.undos = record.undos ?? 0;
+    game.strikes = record.strikes ?? 0;
+    game.refreshPhase();
+    if (["won", "done", "stuck", "gaveup", "struckout"].includes(record.phase)) game.phase = record.phase;
+    game.answerShown = Boolean(record.answerShown);
+    game.restored = true;
+    return game;
   }
 
   get currentRow() {
@@ -173,7 +229,7 @@ export class Game {
    * answer being shown closes off undo.
    */
   giveUp() {
-    if (this.isOver) return false;
+    if (this.isOver || this.restored) return false;
     this.phase = "gaveup";
     this.answerShown = true;
     return true;
@@ -397,7 +453,7 @@ export class Game {
    * game lost on strikes does not get another go.
    */
   get canUndo() {
-    if (this.answerShown || this.phase === "struckout") return false;
+    if (this.answerShown || this.phase === "struckout" || this.restored) return false;
     return this.rows.length > 1 || this.selection.length > 0 || this.phase === "build";
   }
 

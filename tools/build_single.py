@@ -38,6 +38,8 @@ def main():
     html = (ROOT / "dev.html").read_text()
     css = (ROOT / "src/styles.css").read_text()
     js = flatten(SOURCES)
+    # The daily kit is a plain script, not a module, and goes in as it is.
+    kit = (ROOT / "src/shozbot-daily.js").read_text()
 
     icon = base64.b64encode((ROOT / "icon.svg").read_bytes()).decode()
     page = html.replace(
@@ -46,6 +48,9 @@ def main():
     ).replace(
         '<link rel="stylesheet" href="src/styles.css">',
         f"<style>\n{css}</style>",
+    ).replace(
+        '<script src="src/shozbot-daily.js"></script>',
+        f"<script>\n{kit}</script>",
     ).replace(
         '<script type="module" src="src/ui.js"></script>',
         f"<script type=\"module\">\n{js}\n</script>",
