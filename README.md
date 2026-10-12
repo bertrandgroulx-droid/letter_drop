@@ -124,11 +124,46 @@ The on-screen keyboard greys out every letter that has appeared, whether it
 came from the opening word or from a word you made. Those keys are also
 disabled, because a spent letter can never be played again.
 
+## The daily puzzle
+
+The game opens on the day's puzzle: one opening word, the same for everyone,
+numbered by the day of the year (`Daily No. 285 · Mon, Oct 12`). The word is
+drawn from the Tricky pool with a generator seeded from the game's name and
+the date, so no schedule has to be written; the trade is that rebuilding the
+word list reshuffles every day's word. A day already played opens on its
+results, with the board rebuilt from the saved record.
+
+The first finished score for a day is the one that is kept; **Play it again**
+replays the deal but never changes it. A run is finished once it is closed:
+reaching a single letter, giving up, striking out, or looking at a perfect
+run. A dead end is not the end, since undo is the way out of one, so the
+results box says so and nothing is saved until the run closes. Once saved,
+undo is off: the score is the day's score. A run played with hints is
+practice and is not saved.
+
+The line under the title links to **Past puzzles** (the previous hundred
+days, with the kept score beside each) and **Random puzzles**, which are
+what the game used to be: an unlimited supply of random words at the level
+the slider picks, never saved. The address follows along (`?daily=2026-10-12`,
+`?past`, `?practice`, and `?word=plant` still works) so a day can be linked
+and the back button steps through the places visited.
+
+Records live in `localStorage` under `letterdrop:daily:<date>` as
+`{ score, max, results, recap, at }`, the shape every shozbot daily game
+uses; `recap` holds the rows as played, so the day can be shown again. The
+level and the first-visit flag moved under the same `letterdrop:` prefix.
+Sharing produces the kit's heading and score with this game's own grid
+underneath, one line per word.
+
+The logic is `src/shozbot-daily.js`, a copy of the studio kit that every
+shozbot game carries, loaded as a plain script before the game's own code.
+
 ## Levels
 
-A slider at the top of the page picks the level, running Easy to Tricky to
-Fiendish. It starts in the middle, and a stored choice that no longer exists
-lands there too.
+A slider at the top of the page picks the level for random puzzles, running
+Easy to Tricky to Fiendish. It starts in the middle, and a stored choice that
+no longer exists lands there too. The daily is always Tricky, so the slider
+is hidden while it is showing.
 
 Every opener is graded when the word data is built. **Easy** deals are the ones
 where the obvious play, taking the most valuable letter available, is also the
@@ -208,10 +243,12 @@ src/styles.css        styles
 src/game.js           the rules, with no DOM in sight
 src/ui.js             rendering, keyboard, and input
 src/words.js          generated word data, do not edit
+src/shozbot-daily.js  the shozbot daily kit, a copy of the studio's kit/daily.js
 tools/build_words.py  regenerates src/words.js and grades the openers
 tools/build_single.py packs dev.html and src/ into index.html
 tools/build_icons.mjs redraws icon.svg and the home screen icons
 test/game.test.js     tests for the rules
+test/daily.test.js    the daily draw, first score kept, streaks, records
 test/instructions.test.js  checks How to play still matches the rules
 manifest.webmanifest  what a phone reads when adding the game to a home screen
 index.html            generated, do not edit

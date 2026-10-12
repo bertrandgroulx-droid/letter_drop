@@ -106,6 +106,10 @@
 
 * { box-sizing: border-box; }
 
+/* Several blocks set their own display, which would otherwise win over the
+   hidden attribute that swaps the game for the Past puzzles list. */
+[hidden] { display: none !important; }
+
 /* iOS reads two quick taps as a zoom gesture, which is exactly what dropping
    letters looks like. This turns off double-tap zoom while leaving pinch zoom
    and scrolling alone. */
@@ -163,6 +167,36 @@ h1 {
 .bar-left { display: flex; flex-direction: column; align-items: center; }
 
 .bar-right { display: flex; align-items: center; gap: 0.5rem; }
+
+/* ---------- which puzzle ---------- */
+
+/* Under the bar: what is showing, and where else to go. One line where it
+   fits, the links dropping under the text on a narrow phone. */
+.daily {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.15rem 1rem;
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+
+.daily b { color: var(--ink); font-weight: 600; }
+
+.daily-links { display: flex; gap: 1rem; }
+
+/* The words are small for a thumb, so the hit area is padded out without
+   moving the line: vertical padding on an inline box adds nothing to it. */
+.daily-links a {
+  padding: 0.4rem 0;
+  margin: -0.4rem 0;
+  color: var(--new);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.daily-links a:hover { text-decoration: underline; text-underline-offset: 2px; }
 
 /* ---------- level ---------- */
 
@@ -543,6 +577,25 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 }
 
 .result h2 { margin: 0 0 0.5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
+
+/* The daily results, in the order every shozbot daily uses: the score
+   large, the verdict, the streak, whether it was saved. */
+.big-score {
+  margin: 0.1rem 0 0.35rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--new);
+  font-variant-numeric: tabular-nums;
+}
+
+.big-score small { font-size: 1.1rem; font-weight: 600; color: var(--ink-dim); }
+.verdict { margin: 0 0 0.3rem; font-weight: 600; }
+.streak { margin: 0 0 0.3rem; font-size: 0.9rem; font-weight: 600; color: var(--keep); }
+.saved { margin: 0 0 0.75rem; font-size: 0.85rem; color: var(--ink-dim); }
+.saved.good { color: var(--new); }
+.open-end { margin: 0 0 0.5rem; font-size: 0.85rem; color: var(--ink); }
 .strikes { display: inline-flex; gap: 0.28rem; align-items: center; }
 
 .strike {
@@ -554,7 +607,47 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 
 .strike.used { background: var(--bad); border-color: var(--bad); }
 
-.result-actions { display: flex; gap: 0.5rem; justify-content: center; }
+.result-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+.result-actions + .result-actions { margin-top: 0.5rem; }
+
+/* ---------- past puzzles ---------- */
+
+.past {
+  width: 100%;
+  max-width: 30rem;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.past-lead { margin: 0; font-size: 0.9rem; color: var(--ink-dim); }
+
+.days {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.days a {
+  display: grid;
+  grid-template-columns: 4.6rem 1fr auto;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.55rem 0.35rem;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  text-decoration: none;
+}
+
+.days a:hover { background: var(--surface); }
+.days .n { font-family: var(--font-display); font-weight: 700; font-variant-numeric: tabular-nums; }
+.days .d { color: var(--ink-dim); }
+.days .today .d { color: var(--keep); font-weight: 600; }
+.days .s { font-size: 0.9rem; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.days .s.done { color: var(--new); font-weight: 600; }
 .practice { margin: 0 0 0.75rem; font-size: 0.85rem; color: var(--keep); }
 
 /* Two blinks, then a rest, so it catches the eye without nagging. */
@@ -854,14 +947,22 @@ dialog form { text-align: right; }
   </div>
 </header>
 
-<div class="levels">
+<!-- Which puzzle is showing (today's daily, a past day, or a random one) and
+     the links to the other places. The kit fills both. -->
+<div class="daily" id="daily">
+  <span class="daily-text" id="daily-text"></span>
+  <nav class="daily-links" id="daily-links" aria-label="Where to go next"></nav>
+</div>
+
+<!-- The level is a random-puzzle setting, so it is hidden during the daily. -->
+<div class="levels" id="levels" data-game-ui>
   <input type="range" id="level" min="0" max="2" step="1" value="1"
          aria-label="Level" list="level-marks">
   <datalist id="level-marks"><option value="0"></option><option value="1"></option><option value="2"></option></datalist>
   <div class="level-names" id="level-names"></div>
 </div>
 
-<div class="tally">
+<div class="tally" data-game-ui>
   <output class="tally-score" id="score" aria-live="polite">0</output>
   <div class="tally-lines">
     <span class="tally-label" id="tally-label">points</span>
@@ -869,9 +970,9 @@ dialog form { text-align: right; }
   </div>
 </div>
 
-<ol class="breakdown" id="breakdown" aria-label="Score for each word"></ol>
+<ol class="breakdown" id="breakdown" aria-label="Score for each word" data-game-ui></ol>
 
-<main>
+<main data-game-ui>
   <div class="board" id="board" aria-label="Word chain"></div>
   <div id="result"></div>
   <p class="message" id="message" role="status" aria-live="polite"></p>
@@ -882,7 +983,16 @@ dialog form { text-align: right; }
   </div>
 </main>
 
-<div class="keyboard" id="keyboard" aria-label="Keyboard"></div>
+<div class="keyboard" id="keyboard" aria-label="Keyboard" data-game-ui></div>
+
+<!-- Past puzzles: the previous 100 days, newest first, each with its kept
+     score. It takes the game's place while it is showing. -->
+<section class="past" id="past" aria-label="Past puzzles" hidden>
+  <p class="past-lead">Each day has its own opening word, numbered by the day of
+     the year. Your score is kept beside any you have played. Tap a day to
+     play it.</p>
+  <ol class="days" id="past-list"></ol>
+</section>
 
 
 <dialog id="rules">
@@ -978,22 +1088,240 @@ dialog form { text-align: right; }
      contains an A or an I, choose the splits that carry it all the way. If it
      contains neither, keep one of them unspent for the last round.</p>
 
+  <h3>The daily puzzle</h3>
+  <p class="daily-rules">The game opens on the day's puzzle: one opening word,
+     the same for everyone, numbered by the day of the year. Your <b>first
+     finished score</b> for a day is the one that is kept; you can play the
+     day again, but a replay never changes it. Play every day and the results
+     count your <b>streak</b>. <b>Past puzzles</b> lists the previous hundred
+     days, and <b>Random puzzles</b> are unlimited: they use the level slider
+     and are not saved.</p>
+
   <h3>Levels</h3>
-  <p>The slider at the top picks how hard a word you are dealt. Every opening
-     word is graded when the game is built. On <b>Easy</b> deals the obvious
-     play, taking the most valuable letter you can, is also the best play. On
-     <b>Tricky</b> ones it is not, and going for the fat letter will usually
-     strand you. <b>Fiendish</b> deals are those whose best runs go through
-     words most people have never met.</p>
+  <p>On random puzzles, the slider at the top picks how hard a word you are
+     dealt; the daily is always a Tricky one. Every opening word is graded
+     when the game is built. On <b>Easy</b> deals the obvious play, taking
+     the most valuable letter you can, is also the best play. On <b>Tricky</b>
+     ones it is not, and going for the fat letter will usually strand you.
+     <b>Fiendish</b> deals are those whose best runs go through words most
+     people have never met.</p>
 
   <h3>Hints</h3>
   <p>Turn <b>Hints</b> on and every letter that makes a word from where you
      stand gets a green ring. It is there to learn with, so a run played with
-     hints on counts as practice and cannot be shared.</p>
+     hints on counts as practice: it is not saved as the day's score and
+     cannot be shared.</p>
 
   <form method="dialog"><button class="primary">Skip</button></form>
 </dialog>
 
+<!-- The shozbot daily kit, a plain script so window.ShozDaily exists before
+     the game's own code runs. A copy of the studio's kit/daily.js; change it
+     there, not here. -->
+<script>
+/* Shozbot daily-puzzle kit — the logic every daily game shares, with no DOM
+   and no styling. Each game draws its own screens; this decides what they say.
+
+   What it gives a game, so that all of them behave the same way:
+     - which day it is, how days are numbered (by day of the year, "No. 285"),
+       and a seed for that day so everyone gets the same puzzle;
+     - a saved record per day under one storage shape, with the first score
+       kept and later plays never overwriting it;
+     - the streak (days in a row ending today or yesterday);
+     - the standard wording: the daily line, the verdict, the "saved" note;
+     - the share text, with the emoji line and the game's address.
+
+   The canonical copy lives in the studio repo at kit/daily.js. Each game
+   carries its own copy (shozbot-daily.js) so it works with no other site up,
+   the same way the Puzzling games carry their shell. Change the canonical
+   copy, then copy it into each game.
+
+   Usage:
+     var daily = ShozDaily.create({ game: "letter-drop", title: "Letter Drop" });
+     var meta = daily.todayMeta();            // { mode:"daily", date, iso, number, seed }
+     var rng = daily.rng(meta.seed);          // 0..1, deterministic for the day
+     ... play ...
+     var saved = daily.save(meta, { score: 7, max: 10, results: [1,0,1,...], recap: [...] });
+     saved.first        // true when this is the kept score
+     daily.streak()     // 3
+     daily.shareText({ meta, score: 7, max: 10, results: [...] , perMax: 1 })
+*/
+(function (root) {
+  "use strict";
+
+  var PAST_DAYS = 100;
+
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function iso(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function parseIso(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || "");
+    return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+  }
+  function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+  // Numbered by the day of the year, as the Puzzling games are: Jan 1 is No. 1.
+  function dayOfYear(d) { return Math.round((startOfDay(d) - new Date(d.getFullYear(), 0, 1)) / 864e5) + 1; }
+
+  function fmtShort(d) { return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }); }
+  function fmtTiny(d) { return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
+  function fmtLong(d) { return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }); }
+
+  // FNV-1a, 32-bit: a stable hash of a string, the same in every browser.
+  function hash32(s) {
+    var h = 2166136261;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  // mulberry32: a small, good-enough generator seeded from that hash.
+  function rng(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function shuffle(list, random) {
+    var a = list.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function create(opts) {
+    if (!opts || !opts.game) throw new Error("ShozDaily.create needs a game name");
+    var game = opts.game, title = opts.title || game;
+    // The same prefix rule as the Puzzling games: the name without hyphens, then a colon.
+    var store = game.replace(/-/g, "") + ":";
+    var storage = opts.storage || (typeof localStorage !== "undefined" ? localStorage : null);
+    var clock = opts.now || function () { return new Date(); };
+
+    function today() { return startOfDay(clock()); }
+    function read(key, fallback) {
+      if (!storage) return fallback;
+      try { var v = storage.getItem(store + key); return v === null ? fallback : JSON.parse(v); } catch (e) { return fallback; }
+    }
+    function write(key, value) {
+      if (!storage) return;
+      try { storage.setItem(store + key, JSON.stringify(value)); } catch (e) { /* a blocked store never breaks the game */ }
+    }
+
+    function metaFor(date) {
+      var d = startOfDay(date);
+      return { mode: "daily", date: d, iso: iso(d), number: dayOfYear(d), seed: hash32(game + ":" + iso(d)) };
+    }
+    function todayMeta() { return metaFor(today()); }
+    function practiceMeta() { return { mode: "practice", seed: hash32(game + ":practice:" + Math.random()) }; }
+
+    function record(isoDate) { return read("daily:" + isoDate, null); }
+    // The first finished score for a day is the one that is kept.
+    function save(meta, res) {
+      if (!meta || meta.mode !== "daily") return { first: false, saved: false };
+      if (record(meta.iso)) return { first: false, saved: false };
+      write("daily:" + meta.iso, {
+        score: res.score, max: res.max === undefined ? null : res.max,
+        results: res.results || [], recap: res.recap || [], at: Date.now()
+      });
+      return { first: true, saved: true };
+    }
+    function streak() {
+      var t = today(), d = record(iso(t)) ? t : addDays(t, -1), n = 0;
+      while (record(iso(d))) { n++; d = addDays(d, -1); }
+      return n;
+    }
+    function best() {
+      // Highest kept daily score, for a game that wants to show one.
+      var b = null;
+      if (!storage) return b;
+      try {
+        for (var i = 0; i < storage.length; i++) {
+          var k = storage.key(i);
+          if (k && k.indexOf(store + "daily:") === 0) {
+            var r = JSON.parse(storage.getItem(k));
+            if (r && (b === null || r.score > b.score)) b = r;
+          }
+        }
+      } catch (e) { /* ignore */ }
+      return b;
+    }
+    function pastDays(n) {
+      var t = today(), out = [];
+      for (var i = 0; i <= (n || PAST_DAYS); i++) {
+        var d = addDays(t, -i), m = metaFor(d);
+        m.record = record(m.iso); m.isToday = i === 0;
+        out.push(m);
+      }
+      return out;
+    }
+
+    // ---- the standard wording ----
+    function label(meta) {
+      return meta && meta.mode === "daily" ? "Daily No. " + meta.number + " · " + fmtShort(meta.date) : "Random puzzles";
+    }
+    function verdict(score, max, meta) {
+      var daily = meta && meta.mode === "daily";
+      if (max === null || max === undefined) return daily ? "Saved as today’s run." : "A practice run.";
+      var ratio = max ? score / max : 0;
+      return ratio === 1 ? "A perfect game." : ratio >= 0.7 ? "A strong game." : ratio >= 0.4 ? "A fair game."
+        : (daily ? "A tough one. Tomorrow’s is different." : "A tough one. The next one is different.");
+    }
+    function savedLine(meta, first) {
+      if (!meta || meta.mode !== "daily") return "Random puzzle scores are not saved.";
+      if (first) return "Saved as your score for " + (meta.iso === iso(today()) ? "today" : "this day") + ".";
+      return "Your first score for this puzzle is the one that is kept.";
+    }
+    function streakLine() { var n = streak(); return n >= 2 ? n + " days in a row" : ""; }
+
+    // ---- sharing ----
+    // results: one number per item; perMax: the most an item can score. Full
+    // marks is a green square, something is yellow, nothing is white. A game
+    // with its own grid passes squares instead.
+    function squares(results, perMax) {
+      return (results || []).map(function (r) { return r === perMax ? "🟩" : r > 0 ? "🟨" : "⬜"; }).join("");
+    }
+    function shareText(res) {
+      var meta = res.meta;
+      var head = title + " " + (meta && meta.mode === "daily" ? "No. " + meta.number + " · " + fmtTiny(meta.date) : "random puzzles");
+      var line = res.max === null || res.max === undefined ? "Score " + res.score : res.score + "/" + res.max;
+      var sq = res.squares !== undefined ? res.squares : squares(res.results, res.perMax === undefined ? 1 : res.perMax);
+      var url = res.url || (typeof location !== "undefined" && /^https?:$/.test(location.protocol) ? location.origin + location.pathname : "");
+      return head + "\n" + line + (sq ? " " + sq : "") + (url ? "\n" + url : "");
+    }
+    function share(text, btn, label) {
+      var done = function () {
+        if (!btn) return;
+        var was = btn.textContent; btn.textContent = label || "Copied";
+        setTimeout(function () { btn.textContent = was; }, 1600);
+      };
+      if (typeof navigator !== "undefined" && navigator.share) { navigator.share({ text: text }).catch(function () {}); return Promise.resolve("shared"); }
+      if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text).then(function () { done(); return "copied"; }, function () { return "failed"; });
+      }
+      return Promise.resolve("failed");
+    }
+
+    return {
+      game: game, title: title, store: store,
+      today: today, iso: iso, parseIso: parseIso, addDays: addDays, dayOfYear: dayOfYear,
+      fmtShort: fmtShort, fmtTiny: fmtTiny, fmtLong: fmtLong,
+      metaFor: metaFor, todayMeta: todayMeta, practiceMeta: practiceMeta,
+      rng: rng, shuffle: shuffle, hash32: hash32,
+      record: record, save: save, streak: streak, best: best, pastDays: pastDays,
+      read: read, write: write,
+      label: label, verdict: verdict, savedLine: savedLine, streakLine: streakLine,
+      squares: squares, shareText: shareText, share: share,
+      PAST_DAYS: PAST_DAYS
+    };
+  }
+
+  var api = { create: create, hash32: hash32, rng: rng, shuffle: shuffle, iso: iso, parseIso: parseIso, dayOfYear: dayOfYear, version: "2026-10-12" };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  root.ShozDaily = api;
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
 <script type="module">
 /* ---- src/words.js ---- */
 // Generated by tools/build_words.py -- do not edit by hand.
@@ -1107,6 +1435,16 @@ function randomSeed(level = DEFAULT_LEVEL, random = Math.random) {
   return pool[Math.floor(random() * pool.length)];
 }
 
+/**
+ * The day's opening word: one draw from the default level's pool with the
+ * day's seeded generator, so everyone who opens the game that day is dealt
+ * the same word. The generator comes from the shozbot daily kit; it is passed
+ * in rather than imported so the rules stay free of anything outside them.
+ */
+function dailyWord(random) {
+  return randomSeed(DEFAULT_LEVEL, random);
+}
+
 /** The letters that make a real word when added to `block` on `side`. */
 function playableLetters(block, side, dictionary = DICTIONARY, used = NOTHING_USED) {
   const target = dictionary[block.length + 1];
@@ -1173,8 +1511,54 @@ class Game {
     this.strikes = 0;
     this.hintsUsed = false;
     this.answerShown = false;
+    this.restored = false;
     this.best = null;
     this.refreshPhase();
+  }
+
+  /**
+   * Over for good: nothing more can happen to the score. Reaching a single
+   * letter, giving up, striking out, or looking at a perfect run all close a
+   * run. A dead end does not, because undo is the way out of one.
+   */
+  get isClosed() {
+    return ["won", "gaveup", "struckout"].includes(this.phase) || this.answerShown;
+  }
+
+  /**
+   * Everything needed to show this run again later: the rows as played, and
+   * the state that cannot be worked out from them. Saved with a daily score,
+   * so a day that has been played opens on its board rather than a bare
+   * number.
+   */
+  get record() {
+    return {
+      rows: this.rows.map((row) => ({ word: row.word, added: row.added, kept: row.kept })),
+      undos: this.undos,
+      strikes: this.strikes,
+      phase: this.phase,
+      answerShown: this.answerShown,
+    };
+  }
+
+  /**
+   * A run rebuilt from `record`. It comes back closed: a saved day is a
+   * record of what happened, not a game to carry on with, so undo is off.
+   * A record that does not fit the seed, or was never written, gives a fresh
+   * game instead of a broken one.
+   */
+  static restore(seed, record, dictionary = DICTIONARY) {
+    const game = new Game({ seed, dictionary });
+    const rows = record?.rows;
+    if (!Array.isArray(rows) || rows.length === 0 || rows[0]?.word !== seed) return game;
+    game.rows = rows.map((row) => ({ word: row.word, added: row.added ?? null, kept: row.kept ?? null }));
+    game.undos = record.undos ?? 0;
+    game.strikes = record.strikes ?? 0;
+    game.refreshPhase();
+    if (["won", "done", "stuck", "gaveup", "struckout"].includes(record.phase)) game.phase = record.phase;
+    game.answerShown = Boolean(record.answerShown);
+    game.restored = true;
+    return game;
   }
 
   get currentRow() {
@@ -1199,7 +1583,7 @@ class Game {
    * answer being shown closes off undo.
    */
   giveUp() {
-    if (this.isOver) return false;
+    if (this.isOver || this.restored) return false;
     this.phase = "gaveup";
     this.answerShown = true;
     return true;
@@ -1423,7 +1807,7 @@ class Game {
    * game lost on strikes does not get another go.
    */
   get canUndo() {
-    if (this.answerShown || this.phase === "struckout") return false;
+    if (this.answerShown || this.phase === "struckout" || this.restored) return false;
     return this.rows.length > 1 || this.selection.length > 0 || this.phase === "build";
   }
 
@@ -1457,8 +1841,19 @@ class Game {
 }
 
 /* ---- src/ui.js ---- */
+// The shozbot daily kit (src/shozbot-daily.js, loaded as a plain script before
+// this one): which day it is, the day's seed, the saved score per day, the
+// streak, and the standard wording every daily game shares.
+const daily = window.ShozDaily.create({ game: "letter-drop", title: "Letter Drop" });
+
 const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 const els = {
+  dailyText: document.getElementById("daily-text"),
+  dailyLinks: document.getElementById("daily-links"),
+  past: document.getElementById("past"),
+  pastList: document.getElementById("past-list"),
+  levels: document.getElementById("levels"),
+  gameUi: document.querySelectorAll("[data-game-ui]"),
   board: document.getElementById("board"),
   message: document.getElementById("message"),
   score: document.getElementById("score"),
@@ -1486,25 +1881,40 @@ const els = {
 };
 
 /** ?word=plant opens a specific puzzle, so a game can be shared or replayed. */
-function requestedSeed() {
-  const word = new URLSearchParams(location.search).get("word")?.toLowerCase();
+function requestedSeed(query) {
+  const word = query.get("word")?.toLowerCase();
   return word && DICTIONARY[5]?.has(word) ? word : undefined;
 }
 
-const store = {
-  get(key) {
-    try { return localStorage.getItem(key); } catch { return null; }
-  },
-  set(key, value) {
-    try { localStorage.setItem(key, value); } catch { /* private mode */ }
-  },
-};
+/**
+ * Settings used to live at "letterdrop.level" and "letterdrop.seen". Every
+ * app now shares the shozbot.com origin, so they move under the kit's
+ * "letterdrop:" prefix, where the daily records live too.
+ */
+function migrateSetting(oldKey, newKey) {
+  let old = null;
+  try { old = localStorage.getItem(oldKey); } catch { return; }
+  if (old === null) return;
+  if (daily.read(newKey, null) === null) daily.write(newKey, old);
+  try { localStorage.removeItem(oldKey); } catch { /* nothing to tidy */ }
+}
+migrateSetting("letterdrop.level", "level");
+migrateSetting("letterdrop.seen", "seen");
 
-// A level that no longer exists, or none at all, lands in the middle.
-let level = LEVELS.includes(store.get("letterdrop.level"))
-  ? store.get("letterdrop.level")
-  : DEFAULT_LEVEL;
-let game = new Game({ seed: requestedSeed() ?? randomSeed(level) });
+// A level that no longer exists, or none at all, lands in the middle. It is
+// the level for random puzzles; the daily is always dealt at the default.
+let level = LEVELS.includes(daily.read("level", null)) ? daily.read("level", null) : DEFAULT_LEVEL;
+
+// Which puzzle is showing: today's or a past day ({ mode: "daily", iso, number,
+// date, seed }) or a random one ({ mode: "practice" }). The kit decides the
+// wording from it.
+let meta = daily.practiceMeta();
+let game = new Game({ seed: randomSeed(level) });
+// What the kit said when this run's score was saved, or null until it is.
+let saved = null;
+// Whether the page is showing the game or the Past puzzles list; nothing yet
+// until the address has been read.
+let view = null;
 let landingFrom = 0;
 let hintsOn = false;
 let definitionFor = null;
@@ -1656,8 +2066,64 @@ function renderConfirm() {
   return button;
 }
 
+function button(label, className, onClick) {
+  const el = document.createElement("button");
+  el.type = "button";
+  el.className = className;
+  el.textContent = label;
+  el.addEventListener("click", onClick);
+  return el;
+}
+
+function paragraph(className, text) {
+  const el = document.createElement("p");
+  el.className = className;
+  el.textContent = text;
+  return el;
+}
+
+/** Only offered once the game is over, where it can teach without helping. */
+function renderReveal() {
+  const reveal = button("Show a perfect run", "ghost reveal", () => {
+    game.answerShown = true;
+    prefetchDefinitions();
+    render();
+  });
+  const warning = paragraph("best-run-note", "Looking closes this game. Undo stops working.");
+  return [reveal, warning];
+}
+
+/**
+ * The game's own account of the run: what each part was worth. The total
+ * sits above it in large type, so it is not repeated here.
+ */
+function renderScoreTable() {
+  const { words, letters, penalty, bonus } = game.score;
+  const newLetters = game.newLetters.map((c) => c.toUpperCase()).join(" ") || "none";
+  const undoRow = penalty
+    ? `<dt>${game.undos} undo${game.undos === 1 ? "" : "s"}</dt><dd>\u2212${penalty}</dd>`
+    : "";
+  const table = document.createElement("dl");
+  table.innerHTML = `
+      <dt>${game.wordsMade} word${game.wordsMade === 1 ? "" : "s"} made</dt><dd>${words}</dd>
+      <dt>New letters: ${newLetters}</dt><dd>${letters}</dd>
+      ${bonus ? `<dt>Got all the way down</dt><dd>${bonus}</dd>` : ""}
+      ${undoRow}`;
+  return table;
+}
+
+/**
+ * The results, in the order every shozbot daily game uses: the score large,
+ * a verdict, the streak, whether it was saved, then the ways onward. The
+ * game's own breakdown and perfect run sit where they always did.
+ *
+ * In the daily, a dead end is not the end: the run only counts once it is
+ * closed, by reaching a letter, giving up, striking out, or looking at a
+ * perfect run. Until then the box says what the choices are and nothing is
+ * saved, so a stall at the first word is never frozen as the day's score.
+ */
 function renderResult() {
-  const { words, letters, total } = game.score;
+  const isDaily = meta.mode === "daily";
   const box = document.createElement("div");
   box.className = game.isPerfect ? "result perfect" : "result";
   const heading = game.isPerfect ? "Perfect." : {
@@ -1666,63 +2132,65 @@ function renderResult() {
     struckout: "Three strikes.",
     done: "End of the line.",
   }[game.phase] ?? "Stuck.";
-  const { penalty, bonus } = game.score;
-  const newLetters = game.newLetters.map((c) => c.toUpperCase()).join(" ") || "none";
-  const undoRow = penalty
-    ? `<dt>${game.undos} undo${game.undos === 1 ? "" : "s"}</dt><dd>\u2212${penalty}</dd>`
-    : "";
-  box.innerHTML = `
-    <h2>${heading}</h2>
-    <dl>
-      <dt>${game.wordsMade} word${game.wordsMade === 1 ? "" : "s"} made</dt><dd>${words}</dd>
-      <dt>New letters: ${newLetters}</dt><dd>${letters}</dd>
-      ${bonus ? `<dt>Got all the way down</dt><dd>${bonus}</dd>` : ""}
-      ${undoRow}
-      <dt class="total">Total</dt><dd class="total">${total} of ${game.bestPossible}</dd>
-    </dl>
-    ${game.isPerfect ? '<p class="perfect-note">You got the maximum score!</p>' : ""}`;
-  const again = document.createElement("button");
-  again.textContent = "New game";
-  again.addEventListener("click", startNewGame);
+
+  const title = document.createElement("h2");
+  title.textContent = heading;
+  box.append(title);
+
+  if (isDaily && !game.isClosed) {
+    box.append(
+      renderScoreTable(),
+      paragraph("best-run-note open-end",
+        "Today\u2019s run is not over yet. Undo to try another route, or show a perfect run to finish here with this score."),
+      ...renderReveal()
+    );
+    return box;
+  }
+
+  const score = game.score.total;
+  const max = game.bestPossible;
+  const practice = game.hintsUsed;
+
+  const big = document.createElement("div");
+  big.className = "big-score";
+  big.innerHTML = `${score} <small>/ ${max}</small>`;
+  box.append(big, paragraph("verdict", daily.verdict(score, max, meta)));
+
+  const played = isDaily && daily.record(meta.iso);
+  if (played && meta.iso === daily.todayMeta().iso) {
+    const streak = daily.streakLine();
+    if (streak) box.append(paragraph("streak", streak));
+  }
+
+  if (practice) {
+    box.append(paragraph("practice", isDaily
+      ? "Hints were on, so this one is practice: not saved as the day\u2019s score, and not for sharing."
+      : "Hints were on, so this one is practice and cannot be shared."));
+  } else {
+    const first = Boolean(saved?.first);
+    box.append(paragraph(first ? "saved good" : "saved", daily.savedLine(meta, first)));
+  }
+
+  box.append(renderScoreTable());
+  if (game.isPerfect) box.append(paragraph("perfect-note", "You got the maximum score!"));
 
   const actions = document.createElement("div");
   actions.className = "result-actions";
-
-  again.className = "primary";
-  if (game.hintsUsed) {
-    const note = document.createElement("p");
-    note.className = "practice";
-    note.textContent = "Hints were on, so this one is practice and cannot be shared.";
-    box.append(note);
-    actions.append(again);
-  } else {
-    const share = document.createElement("button");
-    share.className = "quiet";
-    share.textContent = "Share";
-    share.addEventListener("click", () => shareResult(share, box));
-    actions.append(again, share);
+  actions.append(button(isDaily ? "Play random puzzles" : "More random puzzles", "primary", () => startRandom()));
+  if (!practice) {
+    const share = button("Share", "quiet", () => shareResult(share, box));
+    actions.append(share);
   }
+  actions.append(button("Past puzzles", "ghost", showPast));
 
-  box.append(actions);
+  const more = document.createElement("div");
+  more.className = "result-actions";
+  more.append(isDaily
+    ? button("Play it again", "quiet", () => startDaily(meta, true))
+    : button("Today\u2019s puzzle", "quiet", openToday));
+  box.append(actions, more);
 
-  // Only offered once the game is over, where it can teach without helping.
-  if (game.answerShown) {
-    box.append(renderBestRun());
-  } else {
-    const reveal = document.createElement("button");
-    reveal.className = "ghost reveal";
-    reveal.textContent = "Show a perfect run";
-    reveal.addEventListener("click", () => {
-      game.answerShown = true;
-      prefetchDefinitions();
-      render();
-    });
-
-    const warning = document.createElement("p");
-    warning.className = "best-run-note";
-    warning.textContent = "Looking closes this game. Undo stops working.";
-    box.append(reveal, warning);
-  }
+  box.append(...(game.answerShown ? [renderBestRun()] : renderReveal()));
   return box;
 }
 
@@ -1944,11 +2412,11 @@ function renderBestRun() {
 }
 
 /**
- * A summary that shows the shape of the run without naming the words. Amber
+ * The shape of the run without naming the words, one line per word. Amber
  * for a letter carried down, green for a letter you brought in and scored on,
  * white for one you added but had used before.
  */
-function shareText() {
+function shareGrid() {
   const rows = game.rows.slice(1).map((row, index) => {
     const entry = game.breakdown[index];
     const added = row.added
@@ -1961,37 +2429,33 @@ function shareText() {
   });
   if (game.score.bonus) rows.push(`finished ${game.score.bonus}`);
   if (game.undos) rows.push(`${game.undos} undo${game.undos === 1 ? "" : "s"}`);
+  return rows.join("\n");
+}
 
-  const link = `${location.origin}${location.pathname}?word=${game.seed}`;
-  return [
-    `Letter Drop \u00b7 ${game.seed.toUpperCase()}`,
-    `${game.score.total} of ${game.bestPossible}${game.isPerfect ? " \u00b7 perfect" : ""}`,
-    "",
-    ...rows,
-    "",
-    link,
-  ].join("\n");
+/**
+ * The kit writes the heading, the score and the address; the grid is this
+ * game's own. It is several lines, so it starts on a line of its own under
+ * the score rather than beside it, which is where a one-line grid would go.
+ * A random puzzle links to its own word, so a friend can be dealt the same.
+ */
+function shareText() {
+  const grid = shareGrid();
+  const page = /^https?:$/.test(location.protocol) ? `${location.origin}${location.pathname}` : "";
+  return daily.shareText({
+    meta,
+    score: game.score.total,
+    max: game.bestPossible,
+    squares: grid ? `\n${grid}` : "",
+    url: meta.mode === "daily" || !page ? undefined : `${page}?word=${game.seed}`,
+  }).replace(" \n", "\n");
 }
 
 async function shareResult(button, box) {
   const text = shareText();
+  const outcome = await daily.share(text, button);
+  if (outcome !== "failed") return;
 
-  if (navigator.share) {
-    try {
-      await navigator.share({ text });
-      return;
-    } catch (error) {
-      if (error?.name === "AbortError") return;
-    }
-  }
-
-  try {
-    await navigator.clipboard.writeText(text);
-    button.textContent = "Copied";
-    setTimeout(() => { button.textContent = "Share"; }, 1600);
-    return;
-  } catch { /* clipboard is not available here */ }
-
+  // Nothing here can share or copy, so the text is put where it can be selected.
   if (box.querySelector(".share-fallback")) return;
   const field = document.createElement("textarea");
   field.className = "share-fallback";
@@ -2024,6 +2488,8 @@ function defaultNote(g = game, alsoChosen = 0) {
         `to make a ${g.block.length + 1}-letter word.`;
     }
     case "stuck":
+      // Once the answer is out there is no undoing, so the advice goes too.
+      if (g.answerShown || g.restored) return "";
       return `No word can be made from <b>${word}</b>. Undo and drop a ` +
         `different run of letters.`;
     default:
@@ -2078,7 +2544,33 @@ function renderBreakdown() {
   }));
 }
 
+/**
+ * The moment a daily run closes, its score is saved. The kit keeps the first
+ * score for a day and ignores any later one, so a replay can never overwrite
+ * it. A run played with hints is practice and is not offered at all, and a
+ * day shown again from its record was saved already.
+ */
+function settle() {
+  if (meta.mode !== "daily" || saved || game.restored || game.hintsUsed || !game.isClosed) return;
+  saved = daily.save(meta, {
+    score: game.score.total,
+    max: game.bestPossible,
+    results: game.breakdown.map((entry) => entry.points),
+    recap: game.record,
+  });
+}
+
+/**
+ * In the daily, a closed run is closed: the score is the day's score, so
+ * there is no stepping back to try for a better one. Random puzzles keep
+ * the game's own rule, where undo after a finish is allowed for a point.
+ */
+function undoAllowed() {
+  return game.canUndo && !(meta.mode === "daily" && game.isClosed);
+}
+
 function render() {
+  settle();
   const layout = boardLayout();
   els.board.style.setProperty("--extent", layout.extent);
   els.board.replaceChildren(
@@ -2095,9 +2587,10 @@ function render() {
   els.tallyLabel.textContent = `points of ${game.bestPossible}`;
   els.tallyDetail.textContent = tallyText();
   renderBreakdown();
-  const undoCosts = game.canUndo &&
+  const canUndo = undoAllowed();
+  const undoCosts = canUndo &&
     game.rows.length > 1 && !game.selection.length && game.phase !== "build";
-  els.undo.disabled = !game.canUndo;
+  els.undo.disabled = !canUndo;
   els.undo.textContent = undoCosts ? `Undo \u2212${UNDO_COST}` : "Undo";
   els.strikes.replaceChildren(...Array.from({ length: STRIKE_LIMIT }, (_, i) => {
     const mark = document.createElement("i");
@@ -2108,7 +2601,9 @@ function render() {
   els.giveUp.hidden = game.isOver;
   els.giveUp.textContent = giveUpArmed ? "Sure? Show the answer" : "Give up";
   els.giveUp.classList.toggle("armed", giveUpArmed);
-  els.undo.title = game.canUndo ? "" : "This game is closed.";
+  els.undo.title = canUndo ? "" : "This game is closed.";
+  // The level is a random-puzzle setting; the daily is always dealt at the default.
+  els.levels.hidden = meta.mode === "daily";
   keepDefinitionOnScreen();
   els.hints.textContent = hintsOn ? "Hints on" : hintsArmed ? "Turn on?" : "Hints";
   els.hints.classList.toggle("on", hintsOn);
@@ -2366,7 +2861,7 @@ function onBackspace() {
   disarmGiveUp();
   if (game.phase === "build" && game.letter) {
     game.setLetter("");
-  } else {
+  } else if (undoAllowed()) {
     game.undo();
   }
   setNote("");
@@ -2411,36 +2906,191 @@ function toggleHints() {
   } else if (!hintsArmed) {
     hintsArmed = true;
     setNote("Hints ring every letter that makes a word from here. This run " +
-      "then counts as practice and cannot be shared. Tap again to switch them on.");
+      (meta.mode === "daily"
+        ? "then counts as practice: it is not saved as the day’s score and cannot be shared. "
+        : "then counts as practice and cannot be shared. ") +
+      "Tap again to switch them on.");
   } else {
     hintsOn = true;
     hintsArmed = false;
     // Marks the run as practice for good, even if you turn them off again.
-    game.hintsUsed = true;
+    // A run that is already over is left as it was played.
+    if (!game.isOver) game.hintsUsed = true;
     setNote("");
   }
   render();
 }
 
-function startNewGame() {
+/* ---------- which puzzle is showing ---------- */
+
+/**
+ * The address says what is showing, so a day can be linked and the back
+ * button steps back through the places visited: ?daily=2026-10-12, ?past,
+ * ?practice, ?word=plant. No query means today's puzzle. On the first load
+ * and when the back button has already moved the address, the address is
+ * replaced rather than pushed.
+ */
+let replacingUrl = false;
+
+function setUrl(query) {
   try {
-    history.replaceState(null, "", location.pathname);
-  } catch { /* sandboxed frames refuse history writes */ }
-  game = new Game({ seed: randomSeed(level) });
-  game.hintsUsed = hintsOn;
+    history[replacingUrl ? "replaceState" : "pushState"](null, "", query || location.pathname);
+  } catch { /* file:// and sandboxed frames refuse history writes */ }
+}
+
+function showView(which) {
+  view = which;
+  for (const el of els.gameUi) el.hidden = which !== "game";
+  els.past.hidden = which !== "past";
+  window.scrollTo(0, 0);
+}
+
+// The line under the title: what is showing, and links to the other places.
+const PLACES = {
+  today: ["Today’s puzzle", "./", () => openToday()],
+  past: ["Past puzzles", "?past", () => showPast()],
+  random: ["Random puzzles", "?practice", () => startRandom()],
+};
+
+function setDailyLine(nodes, places) {
+  els.dailyText.replaceChildren(...nodes);
+  els.dailyLinks.replaceChildren(...places.map((key) => {
+    const [label, href, go] = PLACES[key];
+    const link = document.createElement("a");
+    link.href = href;
+    link.textContent = label;
+    link.addEventListener("click", (event) => { event.preventDefault(); go(); });
+    return link;
+  }));
+}
+
+function lineFor(m) {
+  const strong = document.createElement("b");
+  if (m.mode !== "daily") {
+    strong.textContent = "Random puzzles";
+    return [strong];
+  }
+  strong.textContent = `Daily No. ${m.number}`;
+  return [strong, ` · ${daily.fmtShort(m.date)}`];
+}
+
+function showGame() {
+  setDailyLine(lineFor(meta), meta.mode === "daily" ? ["past", "random"] : ["today", "past"]);
+  showView("game");
+  render();
+}
+
+function resetRun() {
+  saved = null;
   giveUpArmed = false;
   hintsArmed = false;
   definitionFor = null;
   definitionIn = null;
   landingFrom = 0;
   setNote("");
-  render();
+  showGame();
+}
+
+/**
+ * The day's puzzle. A day that has been played opens on its results, rebuilt
+ * from the record so the board shows the run; `again` deals it afresh for a
+ * replay, whose score is never kept.
+ */
+function startDaily(m, again = false) {
+  meta = m;
+  const seed = dailyWord(daily.rng(m.seed));
+  const record = again ? null : daily.record(m.iso);
+  game = record ? Game.restore(seed, record.recap) : new Game({ seed });
+  if (!record) game.hintsUsed = hintsOn;
+  setUrl(m.iso === daily.todayMeta().iso ? "" : `?daily=${m.iso}`);
+  resetRun();
+  // A day that ended with the answer out shows it again, so its words are fetched.
+  if (game.restored && game.answerShown) prefetchDefinitions();
+}
+
+function openToday() {
+  startDaily(daily.todayMeta());
+}
+
+function openDate(isoDate) {
+  const date = daily.parseIso(isoDate);
+  if (!date || date > daily.today()) return showPast();
+  startDaily(daily.metaFor(date));
+}
+
+/** A fresh random deal at the slider's level, or the word a link asked for. */
+function startRandom(seed) {
+  meta = daily.practiceMeta();
+  game = new Game({ seed: seed ?? randomSeed(level) });
+  game.hintsUsed = hintsOn;
+  setUrl(seed ? `?word=${seed}` : "?practice");
+  resetRun();
+}
+
+function showPast() {
+  setUrl("?past");
+  const strong = document.createElement("b");
+  strong.textContent = "Past puzzles";
+  setDailyLine([strong, ` · the previous ${daily.PAST_DAYS} days`], ["today", "random"]);
+
+  const today = daily.today();
+  els.pastList.replaceChildren(...daily.pastDays().map((m) => {
+    const item = document.createElement("li");
+    const link = document.createElement("a");
+    link.href = `?daily=${m.iso}`;
+    if (m.isToday) link.className = "today";
+    link.addEventListener("click", (event) => { event.preventDefault(); openDate(m.iso); });
+
+    const number = document.createElement("span");
+    number.className = "n";
+    number.textContent = `No. ${m.number}`;
+
+    const date = document.createElement("span");
+    date.className = "d";
+    date.textContent = (m.isToday ? "Today, " : "") + daily.fmtTiny(m.date) +
+      (m.date.getFullYear() !== today.getFullYear() ? `, ${m.date.getFullYear()}` : "");
+
+    const score = document.createElement("span");
+    score.className = m.record ? "s done" : "s";
+    score.textContent = m.record ? `${m.record.score} / ${m.record.max}` : "Not played";
+
+    link.append(number, date, score);
+    item.append(link);
+    return item;
+  }));
+  showView("past");
+}
+
+/** The puzzle asked for is the one in hand, so show it rather than deal it again. */
+function resume(matches) {
+  if (!matches) return false;
+  if (view !== "game") showGame();
+  return true;
+}
+
+/** Open whatever the address asks for. */
+function route() {
+  const query = new URLSearchParams(location.search);
+  const word = requestedSeed(query);
+  replacingUrl = true;
+  try {
+    if (query.has("past")) showPast();
+    else if (word) resume(meta.mode === "practice" && game.seed === word) || startRandom(word);
+    else if (query.has("practice")) resume(meta.mode === "practice") || startRandom();
+    else {
+      const wanted = query.get("daily") || daily.todayMeta().iso;
+      resume(meta.mode === "daily" && meta.iso === wanted) || openDate(wanted);
+    }
+  } finally {
+    replacingUrl = false;
+  }
 }
 
 /* ---------- wiring ---------- */
 
 els.undo.addEventListener("click", onBackspace);
-els.newGame.addEventListener("click", startNewGame);
+els.newGame.addEventListener("click", () => startRandom());
+window.addEventListener("popstate", route);
 function renderLevels() {
   els.level.value = String(LEVELS.indexOf(level));
   els.levelNames.replaceChildren(...LEVELS.map((name) => {
@@ -2455,8 +3105,8 @@ els.level.addEventListener("input", () => {
   const chosen = LEVELS[Number(els.level.value)];
   if (!chosen || chosen === level) return;
   level = chosen;
-  store.set("letterdrop.level", level);
-  startNewGame();
+  daily.write("level", level);
+  startRandom();
 });
 els.giveUp.addEventListener("click", onGiveUp);
 els.hints.addEventListener("click", toggleHints);
@@ -2478,6 +3128,7 @@ document.addEventListener("keydown", (event) => {
     }
     return;
   }
+  if (view !== "game") return;
 
   const key = event.key;
   if (/^[a-zA-Z]$/.test(key)) {
@@ -2497,11 +3148,11 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-if (!store.get("letterdrop.seen")) {
-  store.set("letterdrop.seen", "1");
+route();
+if (!daily.read("seen", false)) {
+  daily.write("seen", 1);
   openRules();
 }
-render();
 </script>
 
 <!-- The shozbot studio kit: the "back to shozbot" bar at the top, and visitor

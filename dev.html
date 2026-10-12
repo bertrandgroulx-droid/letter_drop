@@ -50,14 +50,22 @@
   </div>
 </header>
 
-<div class="levels">
+<!-- Which puzzle is showing (today's daily, a past day, or a random one) and
+     the links to the other places. The kit fills both. -->
+<div class="daily" id="daily">
+  <span class="daily-text" id="daily-text"></span>
+  <nav class="daily-links" id="daily-links" aria-label="Where to go next"></nav>
+</div>
+
+<!-- The level is a random-puzzle setting, so it is hidden during the daily. -->
+<div class="levels" id="levels" data-game-ui>
   <input type="range" id="level" min="0" max="2" step="1" value="1"
          aria-label="Level" list="level-marks">
   <datalist id="level-marks"><option value="0"></option><option value="1"></option><option value="2"></option></datalist>
   <div class="level-names" id="level-names"></div>
 </div>
 
-<div class="tally">
+<div class="tally" data-game-ui>
   <output class="tally-score" id="score" aria-live="polite">0</output>
   <div class="tally-lines">
     <span class="tally-label" id="tally-label">points</span>
@@ -65,9 +73,9 @@
   </div>
 </div>
 
-<ol class="breakdown" id="breakdown" aria-label="Score for each word"></ol>
+<ol class="breakdown" id="breakdown" aria-label="Score for each word" data-game-ui></ol>
 
-<main>
+<main data-game-ui>
   <div class="board" id="board" aria-label="Word chain"></div>
   <div id="result"></div>
   <p class="message" id="message" role="status" aria-live="polite"></p>
@@ -78,7 +86,16 @@
   </div>
 </main>
 
-<div class="keyboard" id="keyboard" aria-label="Keyboard"></div>
+<div class="keyboard" id="keyboard" aria-label="Keyboard" data-game-ui></div>
+
+<!-- Past puzzles: the previous 100 days, newest first, each with its kept
+     score. It takes the game's place while it is showing. -->
+<section class="past" id="past" aria-label="Past puzzles" hidden>
+  <p class="past-lead">Each day has its own opening word, numbered by the day of
+     the year. Your score is kept beside any you have played. Tap a day to
+     play it.</p>
+  <ol class="days" id="past-list"></ol>
+</section>
 
 
 <dialog id="rules">
@@ -174,22 +191,37 @@
      contains an A or an I, choose the splits that carry it all the way. If it
      contains neither, keep one of them unspent for the last round.</p>
 
+  <h3>The daily puzzle</h3>
+  <p class="daily-rules">The game opens on the day's puzzle: one opening word,
+     the same for everyone, numbered by the day of the year. Your <b>first
+     finished score</b> for a day is the one that is kept; you can play the
+     day again, but a replay never changes it. Play every day and the results
+     count your <b>streak</b>. <b>Past puzzles</b> lists the previous hundred
+     days, and <b>Random puzzles</b> are unlimited: they use the level slider
+     and are not saved.</p>
+
   <h3>Levels</h3>
-  <p>The slider at the top picks how hard a word you are dealt. Every opening
-     word is graded when the game is built. On <b>Easy</b> deals the obvious
-     play, taking the most valuable letter you can, is also the best play. On
-     <b>Tricky</b> ones it is not, and going for the fat letter will usually
-     strand you. <b>Fiendish</b> deals are those whose best runs go through
-     words most people have never met.</p>
+  <p>On random puzzles, the slider at the top picks how hard a word you are
+     dealt; the daily is always a Tricky one. Every opening word is graded
+     when the game is built. On <b>Easy</b> deals the obvious play, taking
+     the most valuable letter you can, is also the best play. On <b>Tricky</b>
+     ones it is not, and going for the fat letter will usually strand you.
+     <b>Fiendish</b> deals are those whose best runs go through words most
+     people have never met.</p>
 
   <h3>Hints</h3>
   <p>Turn <b>Hints</b> on and every letter that makes a word from where you
      stand gets a green ring. It is there to learn with, so a run played with
-     hints on counts as practice and cannot be shared.</p>
+     hints on counts as practice: it is not saved as the day's score and
+     cannot be shared.</p>
 
   <form method="dialog"><button class="primary">Skip</button></form>
 </dialog>
 
+<!-- The shozbot daily kit, a plain script so window.ShozDaily exists before
+     the game's own code runs. A copy of the studio's kit/daily.js; change it
+     there, not here. -->
+<script src="src/shozbot-daily.js"></script>
 <script type="module" src="src/ui.js"></script>
 
 <!-- The shozbot studio kit: the "back to shozbot" bar at the top, and visitor

@@ -24,3 +24,7 @@ python3 tools/build_single.py   # regenerate index.html and dist/ after any edit
 `index.html`, `icon.svg`, `icons/`, `src/words.js` and `dist/` are generated.
 Edit `dev.html` and `src/` instead, then rebuild. Forgetting the rebuild means
 the site keeps serving the old game.
+
+`src/shozbot-daily.js` is a copy of the studio's `kit/daily.js` (the daily
+puzzle logic every shozbot game shares). Do not edit it here: change the
+canonical copy in the shozbot repo and copy it across.

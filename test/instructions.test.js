@@ -71,6 +71,23 @@ test("every level is described, by the name players see", () => {
   }
 });
 
+test("the daily puzzle is explained: one a day, first score kept, streaks, random unlimited", () => {
+  const flat = rules.replace(/\s+/g, " ");
+  const daily = flat.slice(flat.indexOf("The daily puzzle"));
+  assert.ok(daily.length > 0, "there is a section on the daily");
+  for (const claim of [
+    /the same for everyone/,
+    /first finished score/i,
+    /streak/,
+    /Random puzzles<\/b> are unlimited/,
+    /not saved/,
+    /Past puzzles/,
+  ]) {
+    assert.match(daily, claim, `the daily section should say ${claim}`);
+  }
+  assert.ok(page.includes('id="daily-links"'), "and there is a line that links to past and random puzzles");
+});
+
 test("the controls the game offers are all explained", () => {
   for (const [control, mention] of [
     ["hints", /Hints/],

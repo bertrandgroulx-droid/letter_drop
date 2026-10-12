@@ -86,6 +86,10 @@
 
 * { box-sizing: border-box; }
 
+/* Several blocks set their own display, which would otherwise win over the
+   hidden attribute that swaps the game for the Past puzzles list. */
+[hidden] { display: none !important; }
+
 /* iOS reads two quick taps as a zoom gesture, which is exactly what dropping
    letters looks like. This turns off double-tap zoom while leaving pinch zoom
    and scrolling alone. */
@@ -143,6 +147,36 @@ h1 {
 .bar-left { display: flex; flex-direction: column; align-items: center; }
 
 .bar-right { display: flex; align-items: center; gap: 0.5rem; }
+
+/* ---------- which puzzle ---------- */
+
+/* Under the bar: what is showing, and where else to go. One line where it
+   fits, the links dropping under the text on a narrow phone. */
+.daily {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.15rem 1rem;
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+
+.daily b { color: var(--ink); font-weight: 600; }
+
+.daily-links { display: flex; gap: 1rem; }
+
+/* The words are small for a thumb, so the hit area is padded out without
+   moving the line: vertical padding on an inline box adds nothing to it. */
+.daily-links a {
+  padding: 0.4rem 0;
+  margin: -0.4rem 0;
+  color: var(--new);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.daily-links a:hover { text-decoration: underline; text-underline-offset: 2px; }
 
 /* ---------- level ---------- */
 
@@ -523,6 +557,25 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 }
 
 .result h2 { margin: 0 0 0.5rem; font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
+
+/* The daily results, in the order every shozbot daily uses: the score
+   large, the verdict, the streak, whether it was saved. */
+.big-score {
+  margin: 0.1rem 0 0.35rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--new);
+  font-variant-numeric: tabular-nums;
+}
+
+.big-score small { font-size: 1.1rem; font-weight: 600; color: var(--ink-dim); }
+.verdict { margin: 0 0 0.3rem; font-weight: 600; }
+.streak { margin: 0 0 0.3rem; font-size: 0.9rem; font-weight: 600; color: var(--keep); }
+.saved { margin: 0 0 0.75rem; font-size: 0.85rem; color: var(--ink-dim); }
+.saved.good { color: var(--new); }
+.open-end { margin: 0 0 0.5rem; font-size: 0.85rem; color: var(--ink); }
 .strikes { display: inline-flex; gap: 0.28rem; align-items: center; }
 
 .strike {
@@ -534,7 +587,47 @@ button.tile:hover:not(:disabled) { border-color: var(--keep); }
 
 .strike.used { background: var(--bad); border-color: var(--bad); }
 
-.result-actions { display: flex; gap: 0.5rem; justify-content: center; }
+.result-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+.result-actions + .result-actions { margin-top: 0.5rem; }
+
+/* ---------- past puzzles ---------- */
+
+.past {
+  width: 100%;
+  max-width: 30rem;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.past-lead { margin: 0; font-size: 0.9rem; color: var(--ink-dim); }
+
+.days {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.days a {
+  display: grid;
+  grid-template-columns: 4.6rem 1fr auto;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.55rem 0.35rem;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  text-decoration: none;
+}
+
+.days a:hover { background: var(--surface); }
+.days .n { font-family: var(--font-display); font-weight: 700; font-variant-numeric: tabular-nums; }
+.days .d { color: var(--ink-dim); }
+.days .today .d { color: var(--keep); font-weight: 600; }
+.days .s { font-size: 0.9rem; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.days .s.done { color: var(--new); font-weight: 600; }
 .practice { margin: 0 0 0.75rem; font-size: 0.85rem; color: var(--keep); }
 
 /* Two blinks, then a rest, so it catches the eye without nagging. */
