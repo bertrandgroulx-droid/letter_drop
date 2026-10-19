@@ -148,6 +148,53 @@ h1 {
 
 .bar-right { display: flex; align-items: center; gap: 0.5rem; }
 
+/* The share icon: a round button exactly the height of the buttons beside it
+   (0.45rem padding twice, 0.85rem text at 1.5, and the border: 2.3rem), so
+   the row stays one height. It sits quiet in the dim ink until touched; the
+   glyph is the one every shozbot app uses, so they all match. */
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2.3rem;
+  height: 2.3rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-dim);
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+.share-btn svg { width: 18px; height: 18px; }
+.share-btn:focus-visible { color: var(--ink); }
+@media (hover: hover) {
+  .share-btn:hover { color: var(--ink); background: var(--btn); }
+}
+.share-btn:active { transform: translateY(1px); }
+
+/* The note the share icon leaves on a laptop: "Link copied", or the link
+   itself where nothing can copy it. Fixed at the foot of the screen, on top
+   of the keyboard, and gone again in a moment. */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 5;
+  max-width: calc(100% - 2rem);
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--btn-line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1.5px 0 var(--btn-line);
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+
 /* ---------- which puzzle ---------- */
 
 /* Under the bar: what is showing, and where else to go. One line where it

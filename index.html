@@ -182,6 +182,53 @@ h1 {
 
 .bar-right { display: flex; align-items: center; gap: 0.5rem; }
 
+/* The share icon: a round button exactly the height of the buttons beside it
+   (0.45rem padding twice, 0.85rem text at 1.5, and the border: 2.3rem), so
+   the row stays one height. It sits quiet in the dim ink until touched; the
+   glyph is the one every shozbot app uses, so they all match. */
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2.3rem;
+  height: 2.3rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-dim);
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+.share-btn svg { width: 18px; height: 18px; }
+.share-btn:focus-visible { color: var(--ink); }
+@media (hover: hover) {
+  .share-btn:hover { color: var(--ink); background: var(--btn); }
+}
+.share-btn:active { transform: translateY(1px); }
+
+/* The note the share icon leaves on a laptop: "Link copied", or the link
+   itself where nothing can copy it. Fixed at the foot of the screen, on top
+   of the keyboard, and gone again in a moment. */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 5;
+  max-width: calc(100% - 2rem);
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--btn-line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1.5px 0 var(--btn-line);
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+
 /* ---------- which puzzle ---------- */
 
 /* Under the bar: what is showing, and where else to go. One line where it
@@ -958,6 +1005,16 @@ dialog form { text-align: right; }
   <div class="bar-right">
     <button type="button" id="hints" class="ghost" aria-pressed="false"
             title="Ring every letter that makes a word from here. A run played with hints on counts as practice and cannot be shared.">Hints</button>
+    <!-- The share icon every shozbot phone app carries, left of How to play.
+         It links to whatever is showing: a day's puzzle by date, a random
+         puzzle by its word, otherwise the plain address. -->
+    <button type="button" id="share" class="share-btn" aria-label="Share a link to this"
+            title="Share a link to this">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5v9h14v-9h-1"/>
+      </svg>
+    </button>
     <button type="button" id="how-to" class="ghost">How to play</button>
     <button type="button" id="new-game" class="ghost primary">New game</button>
   </div>
@@ -1856,6 +1913,62 @@ class Game {
   }
 }
 
+/* ---- src/share.js ---- */
+/**
+ * The share icon in the header, the one every shozbot phone app carries: a
+ * link to whatever is on screen, and the three ways of handing it over. No
+ * DOM in here, so the link for each state and the hand-over can be tested on
+ * their own.
+ *
+ * The address is always the shozbot.com one, taken from the page's canonical
+ * link rather than from location: this file is also served from the old
+ * github.io address, and saved progress lives per address.
+ */
+const APP = "Letter Drop";
+const HOME = "https://shozbot.com/letter-drop/";
+
+/**
+ * What to share, from what is showing. A specific day's puzzle, in play or on
+ * its results, links to that day by date, so the link opens the same puzzle
+ * tomorrow. A random puzzle links to its word, which the game has always
+ * supported, so a friend is dealt the same one. The Past puzzles list, or
+ * anything else, is the plain address.
+ */
+function shareLink({ canonical, view, meta, seed } = {}) {
+  const base = canonical || HOME;
+  if (view === "past" || !meta) return { url: base, title: APP };
+  if (meta.mode === "daily") {
+    return { url: `${base}?daily=${meta.iso}`, title: `${APP} · Daily No. ${meta.number}` };
+  }
+  return { url: seed ? `${base}?word=${seed}` : base, title: APP };
+}
+
+/**
+ * On a phone, the share sheet. On a laptop, the clipboard, with a short
+ * "Link copied" note. Where neither exists, the link itself goes in the note,
+ * so it can at least be read off. A share sheet the person closes is left
+ * alone; one the browser refuses falls through to the clipboard.
+ */
+async function handOver(link, { navigator: nav, toast } = {}) {
+  if (nav?.share) {
+    try {
+      await nav.share({ title: link.title, url: link.url });
+      return "shared";
+    } catch (error) {
+      if (error?.name === "AbortError") return "dismissed";
+    }
+  }
+  if (nav?.clipboard?.writeText) {
+    try {
+      await nav.clipboard.writeText(link.url);
+      toast?.("Link copied");
+      return "copied";
+    } catch { /* a blocked clipboard falls through to showing the link */ }
+  }
+  toast?.(link.url);
+  return "shown";
+}
+
 /* ---- src/ui.js ---- */
 // The shozbot daily kit (src/shozbot-daily.js, loaded as a plain script before
 // this one): which day it is, the day's seed, the saved score per day, the
@@ -1893,6 +2006,7 @@ const els = {
   strikes: document.getElementById("strikes"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
+  share: document.getElementById("share"),
   rules: document.getElementById("rules"),
 };
 
@@ -3127,6 +3241,32 @@ els.level.addEventListener("input", () => {
 els.giveUp.addEventListener("click", onGiveUp);
 els.hints.addEventListener("click", toggleHints);
 els.howTo.addEventListener("click", openRules);
+
+/* ---------- the share icon ---------- */
+
+// The shozbot.com address, from the canonical link rather than location:
+// this page is also served from github.io, and progress lives per address.
+const canonical = document.querySelector('link[rel="canonical"]')?.href;
+
+/** The link for what is showing right now: this day, this word, or the game. */
+function currentLink() {
+  return shareLink({ canonical, view, meta, seed: game.seed });
+}
+
+let toastTimer = null;
+/** A short note at the foot of the screen; a link stays long enough to read. */
+function toast(text) {
+  document.querySelector(".toast")?.remove();
+  const note = document.createElement("div");
+  note.className = "toast";
+  note.setAttribute("role", "status");
+  note.textContent = text;
+  document.body.append(note);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => note.remove(), text === "Link copied" ? 1800 : 6000);
+}
+
+els.share.addEventListener("click", () => handOver(currentLink(), { navigator, toast }));
 els.demoBack.addEventListener("click", () => stepDemo(-1));
 els.demoNext.addEventListener("click", () => stepDemo(1));
 

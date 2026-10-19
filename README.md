@@ -158,6 +158,19 @@ underneath, one line per word.
 The logic is `src/shozbot-daily.js`, a copy of the studio kit that every
 shozbot game carries, loaded as a plain script before the game's own code.
 
+## Sharing a link
+
+The share icon in the header, left of How to play, is the one every shozbot
+phone app carries. It links to whatever is on screen: a day's puzzle by date
+(`?daily=2026-10-12`, in play or on its results, titled `Letter Drop · Daily
+No. 285`), a random puzzle by its word (`?word=plant`), and the Past puzzles
+list by the plain address. On a phone it opens the share sheet; on a laptop
+it copies the link and says so; where neither works it shows the link. The
+address is always the shozbot.com one, read from the page's canonical link,
+since the file is also served from github.io and saved scores live per
+address. The logic is `src/share.js`, tested in `test/share.test.js`; it is
+separate from the Share button on a finished run, which shares the score.
+
 ## Levels
 
 A slider at the top of the page picks the level for random puzzles, running

@@ -1,5 +1,6 @@
 import { DEFAULT_LEVEL, FINISH_BONUS, Game, LEVELS, LEVEL_NAMES, STRIKE_LIMIT, UNDO_COST, dailyWord, letterValue, playableLetters, randomSeed } from "./game.js";
 import { DICTIONARY } from "./words.js";
+import { handOver, shareLink } from "./share.js";
 
 // The shozbot daily kit (src/shozbot-daily.js, loaded as a plain script before
 // this one): which day it is, the day's seed, the saved score per day, the
@@ -37,6 +38,7 @@ const els = {
   strikes: document.getElementById("strikes"),
   newGame: document.getElementById("new-game"),
   howTo: document.getElementById("how-to"),
+  share: document.getElementById("share"),
   rules: document.getElementById("rules"),
 };
 
@@ -1271,6 +1273,32 @@ els.level.addEventListener("input", () => {
 els.giveUp.addEventListener("click", onGiveUp);
 els.hints.addEventListener("click", toggleHints);
 els.howTo.addEventListener("click", openRules);
+
+/* ---------- the share icon ---------- */
+
+// The shozbot.com address, from the canonical link rather than location:
+// this page is also served from github.io, and progress lives per address.
+const canonical = document.querySelector('link[rel="canonical"]')?.href;
+
+/** The link for what is showing right now: this day, this word, or the game. */
+function currentLink() {
+  return shareLink({ canonical, view, meta, seed: game.seed });
+}
+
+let toastTimer = null;
+/** A short note at the foot of the screen; a link stays long enough to read. */
+function toast(text) {
+  document.querySelector(".toast")?.remove();
+  const note = document.createElement("div");
+  note.className = "toast";
+  note.setAttribute("role", "status");
+  note.textContent = text;
+  document.body.append(note);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => note.remove(), text === "Link copied" ? 1800 : 6000);
+}
+
+els.share.addEventListener("click", () => handOver(currentLink(), { navigator, toast }));
 els.demoBack.addEventListener("click", () => stepDemo(-1));
 els.demoNext.addEventListener("click", () => stepDemo(1));
 

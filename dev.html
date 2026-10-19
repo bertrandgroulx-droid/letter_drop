@@ -45,6 +45,16 @@
   <div class="bar-right">
     <button type="button" id="hints" class="ghost" aria-pressed="false"
             title="Ring every letter that makes a word from here. A run played with hints on counts as practice and cannot be shared.">Hints</button>
+    <!-- The share icon every shozbot phone app carries, left of How to play.
+         It links to whatever is showing: a day's puzzle by date, a random
+         puzzle by its word, otherwise the plain address. -->
+    <button type="button" id="share" class="share-btn" aria-label="Share a link to this"
+            title="Share a link to this">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5v9h14v-9h-1"/>
+      </svg>
+    </button>
     <button type="button" id="how-to" class="ghost">How to play</button>
     <button type="button" id="new-game" class="ghost primary">New game</button>
   </div>

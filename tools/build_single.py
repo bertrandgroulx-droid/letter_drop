@@ -16,7 +16,7 @@ import pathlib
 import re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-SOURCES = ["src/words.js", "src/game.js", "src/ui.js"]
+SOURCES = ["src/words.js", "src/game.js", "src/share.js", "src/ui.js"]
 
 
 def flatten(paths):
